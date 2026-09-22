@@ -1,0 +1,6 @@
+# name,
+# budget,
+# pax per,
+# dietary restrictions,
+# meal goal,
+# country/currency,

@@ -1,0 +1,12 @@
+# name: string,
+# budget: float,
+# pax: int,
+# Diet_restriction: string,
+# Calorie_count: int,
+# Protein: int,
+# Fats: int,
+# Country: string,
+# Error: string,
+# Recipe: multiline_string ,
+# Cuisine: string,
+# Total 
