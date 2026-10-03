@@ -227,7 +227,7 @@ def display_generated_meal_plan(user_input, ai_output):
     print(f"Country: {user_input[6]}")
 
     # AI output
-    print(f"\nTotal Grocery Cost: ${ai_output['Total_groccery_cost']:.2f}")
+    print(f"\nTotal Grocery Cost: ${ai_output['Total_grocery_cost']:.2f}")
 
     print("\nIngredient List:")
 
@@ -255,7 +255,7 @@ def display_meal_plan(plan):
     print(f"Meal Plan for {plan['name']}")
     print("-" * 30)
 
-    print(f"Total Grocery Cost: ${plan['Total_groccery_cost']:.2f}")
+    print(f"Total Grocery Cost: ${plan['Total_grocery_cost']:.2f}")
 
     print("\nIngredient List:")
 
@@ -287,7 +287,7 @@ def display_all_plans(meal_plans):
             print(
                 f"{plan['id']}: Meal Plan for {plan['name']} "
                 f"({plan['pax']} pax) - "
-                f"${plan['Total_groccery_cost']:.2f} "
+                f"${plan['Total_grocery_cost']:.2f} "
                 f"[{plan['date']}]"
             )
 
