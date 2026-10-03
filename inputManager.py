@@ -1,5 +1,7 @@
 import tkinter as tk
 import pycountry
+import json
+import re
 
 # name,
 def get_name_input(name_input):
@@ -193,6 +195,156 @@ def main():
         print("="*40)
         return all_input
 
-if __name__ == "__main__":
-    profile_input = main()
-    print(profile_input)
+def main_menu():
+    while True:
+        print("\nMain Menu")
+        print("-" * 30)
+        print("1. Generate New Meal Plan\n2. View Saved Plans and Recipes\n3. Exit")
+        print("-" * 30)
+
+        choice = input("\nPlease select an option (1-3): ")
+        print()
+        
+        if choice.isdigit() and 1 <= int(choice) <= 3:
+            return int(choice)
+
+        print("Invalid choice. Please try again.")
+
+
+# Display the newly generated AI meal plan
+def display_generated_meal_plan(user_input, ai_output):
+
+    print()
+    print(f"Meal Plan for {user_input[0]}")
+    print("-" * 30)
+
+    # User input
+    print(f"Budget: ${user_input[1]:.2f}")
+    print(f"Pax: {user_input[2]}")
+    print(f"Dietary Restrictions: {user_input[3]}")
+    print(f"Dietary Goal: {user_input[4]}")
+    print(f"Calories: {user_input[5]} kcal")
+    print(f"Country: {user_input[6]}")
+
+    # AI output
+    print(f"\nTotal Grocery Cost: ${ai_output['Total_groccery_cost']:.2f}")
+
+    print("\nIngredient List:")
+
+    for ingredient in ai_output["Grocery_list"]:
+        print(
+            f"- {ingredient['ingredient_name']} "
+            f"({ingredient['Quantity']} - "
+            f"${ingredient['Price_per_ingredient']:.2f})"
+        )
+
+    print("\nRecipes:")
+
+    for i, recipe in enumerate(ai_output["Dishes"], 1):
+        print(
+            f"{i}. {recipe['dish_name']} "
+            f"[{recipe['cuisine']}] - "
+            f"Est. Price: ${recipe['price_per_meal']:.2f}"
+        )
+
+
+# Display a saved meal plan from the final JSON file
+def display_meal_plan(plan):
+
+    print()
+    print(f"Meal Plan for {plan['name']}")
+    print("-" * 30)
+
+    print(f"Total Grocery Cost: ${plan['Total_groccery_cost']:.2f}")
+
+    print("\nIngredient List:")
+
+    for ingredient in plan["Grocery_list"]:
+        print(
+            f"- {ingredient['ingredient_name']} "
+            f"({ingredient['Quantity']} - "
+            f"${ingredient['Price_per_ingredient']:.2f})"
+        )
+
+    print("\nRecipes:")
+
+    for i, recipe in enumerate(plan["Dishes"], 1):
+        print(
+            f"{i}. {recipe['dish_name']} "
+            f"[{recipe['cuisine']}] - "
+            f"Est. Price: ${recipe['price_per_meal']:.2f}"
+        )
+
+def display_all_plans(meal_plans):
+    print("-" * 30)
+    print("Saved Meal Plans")
+    print("-" * 30)
+
+    with open(meal_plans, "r") as file:
+        plans = json.load(file)
+
+        for plan in plans:
+            print(
+                f"{plan['id']}: Meal Plan for {plan['name']} "
+                f"({plan['pax']} pax) - "
+                f"${plan['Total_groccery_cost']:.2f} "
+                f"[{plan['date']}]"
+            )
+
+
+def get_selected_plan(meal_plans):
+    with open(meal_plans, "r") as file:
+        plans = json.load(file)
+
+    while True:
+        choice = input(
+            "\nEnter the ID of the meal plan you want to view "
+            "(or 'back' to return to the main menu): "
+        )
+
+        if choice.lower() == "back":
+            return None
+
+        if choice.isdigit():
+            choice = int(choice)
+
+            for plan in plans:
+                if plan["id"] == choice:
+                    return plan
+
+        print("Invalid input. Please enter a valid ID.")
+
+
+def display_recipe_details(recipe):
+    print()
+    print("-" * 30)
+    print(f"Recipe: {recipe['dish_name']} ({recipe['cuisine']})")
+    print("-" * 30)
+    print(f"Ingredients: {recipe['ingredients']}")
+    print(f"Calories: {recipe['calorie_count_per_meal_output']}")
+    print(f"Protein: {recipe['protein_count_per_meal_output']}")
+    print(f"Fats: {recipe['fats_count_per_meal']}")
+    print(f"Estimated Price: ${recipe['price_per_meal']:.2f}")
+    print("\nInstructions:")
+
+    instructions = re.split(r"(?=\d+\.\s)", recipe["recipe"])
+
+    for instruction in instructions:
+        if instruction.strip():
+            print(instruction.strip())
+
+
+def get_selected_recipe(plan):
+    while True:
+        choice = input(
+            "\nEnter the number of the recipe you want to view "
+            "(or 'back' to return to the meal plan): "
+        )
+
+        if choice.lower() == "back":
+            return False
+        if choice.isdigit() and 1 <= int(choice) <= len(plan["Dishes"]):
+            display_recipe_details(plan["Dishes"][int(choice) - 1])
+        else:
+            print("Invalid input. Please enter a valid number.")
+
