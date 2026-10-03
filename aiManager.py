@@ -12,40 +12,44 @@ def time_out():
     return True
 
 #checks if data is valid
-def validatedata(pax, total_groccery_cost, country,exclusion):
-    valid_pax = isinstance(pax,int)
-    valid_groccery = isinstance(total_groccery_cost,float) or isinstance(total_groccery_cost,int)
+def validatedata(pax, total_grocery_cost, country,exclusion):
+    try:
+        float(total_grocery_cost.strip())
+        valid_grocery = True
+    except:
+        valid_grocery = False
+    valid_pax = pax.isdigit()
     valid_country = isinstance(country,str)    
     valid_exclusion = isinstance(exclusion,str)
     errormsg = ""
     if valid_pax == False:
         errormsg = errormsg + "!! Please key in Pax as a valid number \n"
-    if valid_groccery == False:
-        errormsg = errormsg +"!! Please key in Total Groccery Cost as a valid number \n"
+    if valid_grocery == False:
+        errormsg = errormsg +"!! Please key in Total grocery Cost as a valid number \n"
     if valid_country == False:
         errormsg = errormsg +"!! Please key in a valid Country"
     if valid_exclusion == False:
         errormsg = errormsg + "!! Please key in a valid exclusion"
     #return prompt if data is correct
-    if valid_pax == True and valid_groccery == True and valid_country == True:
+    if valid_pax == True and valid_grocery == True and valid_country == True:
         return (True,"")
     else:
         return (False,errormsg)
 
 #craft the prompt to be fed into the Gemini API Call
-def craftprompt(pax, total_groccery_cost, country,exclusion):
+def craftprompt(pax, total_grocery_cost, country,exclusion):
     #check if data is valid
-    data_is_valid,msg = validatedata(pax, total_groccery_cost, country,exclusion)
+    data_is_valid,msg = validatedata(pax, total_grocery_cost, country,exclusion)
     if data_is_valid == True:
         return f"""
         Generate a grocery list and meals for:
-        Country: {country} | Budget: {total_groccery_cost} | Pax: {pax} | Exclusion: {exclusion}
+        Country: {country} | Budget: {total_grocery_cost} | Pax: {pax} | Exclusion: {exclusion}
 
         Return JSON matching this schema:
         {{
         "pax": 1,
         "Error": "string or 'budget is too low to craft a meal' if insufficient",
-        "Total_groccery_cost": 0.0,
+        "Total_grocery_cost": 0.0,
         "Grocery_list": [
             {{"ingredient_name": "string", "Price_per_ingredient": 0.0, "Quantity": "string"}}
         ],
@@ -105,7 +109,7 @@ def GeminiAPI(prompt):
     response = {
             "pax": 1,
             "Error": "",
-            "Total_groccery_cost": 42.2,
+            "Total_grocery_cost": 42.2,
             "Grocery_list": [
                 {
                 "ingredient_name": "Jasmine Rice",
