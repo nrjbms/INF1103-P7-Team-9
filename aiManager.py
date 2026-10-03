@@ -12,10 +12,11 @@ def time_out():
     return True
 
 #checks if data is valid
-def validatedata(pax, total_groccery_cost, country):
+def validatedata(pax, total_groccery_cost, country,exclusion):
     valid_pax = isinstance(pax,int)
     valid_groccery = isinstance(total_groccery_cost,float) or isinstance(total_groccery_cost,int)
     valid_country = isinstance(country,str)    
+    valid_exclusion = isinstance(exclusion,str)
     errormsg = ""
     if valid_pax == False:
         errormsg = errormsg + "!! Please key in Pax as a valid number \n"
@@ -23,6 +24,8 @@ def validatedata(pax, total_groccery_cost, country):
         errormsg = errormsg +"!! Please key in Total Groccery Cost as a valid number \n"
     if valid_country == False:
         errormsg = errormsg +"!! Please key in a valid Country"
+    if valid_exclusion == False:
+        errormsg = errormsg + "!! Please key in a valid exclusion"
     #return prompt if data is correct
     if valid_pax == True and valid_groccery == True and valid_country == True:
         return (True,"")
@@ -30,13 +33,13 @@ def validatedata(pax, total_groccery_cost, country):
         return (False,errormsg)
 
 #craft the prompt to be fed into the Gemini API Call
-def craftprompt(pax, total_groccery_cost, country):
+def craftprompt(pax, total_groccery_cost, country,exclusion):
     #check if data is valid
-    data_is_valid,msg = validatedata(pax, total_groccery_cost, country)
+    data_is_valid,msg = validatedata(pax, total_groccery_cost, country,exclusion)
     if data_is_valid == True:
         return f"""
         Generate a grocery list and meals for:
-        Country: {country} | Budget: {total_groccery_cost} | Pax: {pax}
+        Country: {country} | Budget: {total_groccery_cost} | Pax: {pax} | Exclusion: {exclusion}
 
         Return JSON matching this schema:
         {{
