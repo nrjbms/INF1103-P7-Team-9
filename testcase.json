@@ -1,0 +1,3 @@
+[{"Test Case Name": "AI Manager: Invalid Pax","Inputs": ["s",10,"Singapore",""], "Expected_Output": "!! Please key in Pax as a valid number"},
+{"Test Case Name": "AI Manager: Invalid Budget","Inputs": [1,"s","Singapore",""], "Expected_Output": "!! Please key in Total Groccery Cost as a valid number"},
+{"Test Case Name": "AI Manager: Invalid Budget","Inputs": [1,"s","Singapore",""], "Expected_Output": "!! Please key in Total Groccery Cost as a valid number"}]
