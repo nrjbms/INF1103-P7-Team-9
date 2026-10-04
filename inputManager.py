@@ -137,6 +137,42 @@ def get_calorie_count(selected_goals):
                 calorie_count = 2000
     return calorie_count
 
+#Cuisine
+def open_cuisine_menu():
+
+    global listbox_cuisine, root_cuisine, CUISINE
+    print("\n------[Opening Cuisine Menu]------")
+
+    root_cuisine = tk.Tk()
+    root_cuisine.title("Cuisine")
+
+    root_cuisine.protocol("WM_DELETE_WINDOW", get_cuisine_selected)
+
+    CUISINE = ("Anything", "Chinese", "Malay", "Indian", "Japanese", "Thai", "Korean", "Vietnamese", "Italian", "Mexican", "Western")
+
+    listbox_cuisine = tk.Listbox(root_cuisine, selectmode="multiple", height=10)
+    listbox_cuisine.pack(padx = 10, pady= 10)
+
+    for item in CUISINE:
+        listbox_cuisine.insert(tk.END, item)
+
+    btn_cuisine = tk.Button(root_cuisine, text = "Submit", command = get_cuisine_selected)
+    btn_cuisine.pack(pady = 5)
+
+    root_cuisine.mainloop()
+
+def get_cuisine_selected():
+    global selected_cuisine
+    selected_cuisine = listbox_cuisine.curselection()
+    if not selected_cuisine:
+        print("No cuisine selected. Anything will be chosen")
+        selected_cuisine = ('Anything',)
+    else:
+        selected_cuisine = tuple(CUISINE[i] for i in selected_cuisine)
+        print("Selected Cuisine: ", selected_cuisine)
+    root_cuisine.destroy()
+    return selected_cuisine
+
 # country/currency,
 def get_country_input(country_input):
     country_input = input(country_input)
@@ -147,7 +183,7 @@ def get_country_input(country_input):
         print("Error, country not found. Please enter a valid country.")
         return "country_error"
 
-def main():
+def main_input():
     while True:
         
         name_input = get_name_input("Enter name (Enter 'quit' to quit): ")
@@ -174,13 +210,15 @@ def main():
 
         calorie_count = get_calorie_count(selected_goals)
 
+        open_cuisine_menu()
+
         while True:
             country_input = get_country_input("\nEnter country: ")
             if not country_input == "country_error":
                 print("Selected Country: ", country_input)
                 break
 
-        combined_input = [name_input, budget_input, pax_input, selected_restrictions, selected_goals, calorie_count, country_input]
+        combined_input = [name_input, budget_input, pax_input, selected_restrictions, selected_goals, calorie_count, selected_cuisine, country_input]
         all_input = (combined_input)
 
         print("         MEAL PLANNER PROFILE SEARCH        ")
@@ -191,6 +229,7 @@ def main():
         print(f"Dietary Restrictions: {selected_restrictions}")
         print(f"Dietary Goal: {selected_goals}")
         print(f"Calories: {calorie_count} kcal")
+        print(f"Cuisine: {selected_cuisine}")
         print(f"Target Country: {country_input}")
         print("="*40)
         return all_input
