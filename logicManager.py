@@ -5,7 +5,7 @@ LOW_CALORIE_MAX = 500            # calorie cap for "Low Calorie"
 HIGH_PROTEIN_MIN = 30            # protein floor (g) for "High Protein"
 HIGH_PROTEIN_MIN_RATIO = 0.25    # protein must supply >= 25% of calories
 
-test_user_input = {
+""" test_user_input = {
     "Total_budget": 50,
     "Dietary_restrictions": ("Eggs"),
     "Meal_goal": "Standard",
@@ -72,7 +72,7 @@ test_ai_output = {
       "ingredients": "Jasmine Rice, Fresh Eggs, Carrots, Cabbage, Garlic, Light Soy Sauce, Spring Onions, Cooking Oil"
     }
   ]
-}
+} """
 
 def parse_number(value):
     if isinstance(value, (int, float)) and not isinstance(value, bool):
@@ -355,26 +355,26 @@ def process_ai_response(ai_output, user_input):
         else:
             plan["outcome"] = "FLAGGED"
     return plan
-if __name__ == "__main__":
-        result = process_ai_response(test_ai_output, test_user_input)
-        print("Outcome:", result["outcome"])
-        print("Error:", result["Error"])
-        print("Warnings:", result["warnings"])
-        print("Dishes:", [d["dish_name"] for d in result["Dishes"]])
-        print("Flagged:", result["flagged_dishes"])
+# if __name__ == "__main__":
+#         result = process_ai_response(test_ai_output, test_user_input)
+#         print("Outcome:", result["outcome"])
+#         print("Error:", result["Error"])
+#         print("Warnings:", result["warnings"])
+#         print("Dishes:", [d["dish_name"] for d in result["Dishes"]])
+#         print("Flagged:", result["flagged_dishes"])
 
-        budget = check_budget_compliance(test_user_input, test_ai_output)
-        # print(budget["status"])
-        # print(budget["reason"])
+#         budget = check_budget_compliance(test_user_input, test_ai_output)
+#         # print(budget["status"])
+#         # print(budget["reason"])
 
-        restrictions = filter_dishes_by_dietary_rules(test_ai_output["Dishes"], test_user_input["Dietary_restrictions"])
-        # print("Valid dishes list:", restrictions["valid_dish_names"])
-        # print("Flagged items details:", restrictions["flagged_dishes"])
+#         restrictions = filter_dishes_by_dietary_rules(test_ai_output["Dishes"], test_user_input["Dietary_restrictions"])
+#         # print("Valid dishes list:", restrictions["valid_dish_names"])
+#         # print("Flagged items details:", restrictions["flagged_dishes"])
         
-        nutrition = filter_dishes_by_nutrition(test_ai_output, "High Protein")
-        # print(nutrition["valid_dish_names"])
-        # print(nutrition["flagged_dishes"])
+#         nutrition = filter_dishes_by_nutrition(test_ai_output, "High Protein")
+#         # print(nutrition["valid_dish_names"])
+#         # print(nutrition["flagged_dishes"])
 
-        cuisine = filter_dishes_by_cuisine(nutrition["valid_dishes"], ("Anything",))
-        # print(cuisine["valid_dish_names"])
-        # print(cuisine["fallback_used"])
+#         cuisine = filter_dishes_by_cuisine(nutrition["valid_dishes"], ("Anything",))
+#         # print(cuisine["valid_dish_names"])
+#         # print(cuisine["fallback_used"])

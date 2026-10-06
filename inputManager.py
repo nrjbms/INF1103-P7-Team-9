@@ -253,7 +253,6 @@ def main_menu():
 # Display the newly generated AI meal plan
 def display_generated_meal_plan(user_input, ai_output):
 
-
     print()
     print(f"Meal Plan for {user_input[0]}")
     print("-" * 30)
