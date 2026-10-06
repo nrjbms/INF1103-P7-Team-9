@@ -38,9 +38,6 @@ def validatedata(pax, total_grocery_cost, country,exclusion):
 
 #craft the prompt to be fed into the Gemini API Call
 def craftprompt(pax, total_grocery_cost, country,exclusion):
-    #check if data is valid
-    data_is_valid,msg = validatedata(pax, total_grocery_cost, country,exclusion)
-    if data_is_valid == True:
         return f"""
         Generate a grocery list and meals for:
         Country: {country} | Budget: {total_grocery_cost} | Pax: {pax} | Exclusion: {exclusion}
@@ -67,10 +64,6 @@ def craftprompt(pax, total_grocery_cost, country,exclusion):
         ]
         }}
         """
-
-    #return compiled error messages
-    else:
-        return msg
 
 
 #Gemini API Call
