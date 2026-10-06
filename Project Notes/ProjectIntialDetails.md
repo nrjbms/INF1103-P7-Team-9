@@ -27,4 +27,4 @@ Budget Alert Rule: Total cost cannot exceed user’s budget
 Meal Acceptance Rule:  Limit calories to user’s preferences
 
 Github Link
-https://github.com/nrjbms/INF1103-Team-Project 
+https://github.com/nrjbms/INF1103-P7-Team-9

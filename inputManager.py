@@ -1,5 +1,7 @@
 import tkinter as tk
 import pycountry
+import json
+import re
 
 # name,
 def get_name_input(name_input):
@@ -135,6 +137,42 @@ def get_calorie_count(selected_goals):
                 calorie_count = 2000
     return calorie_count
 
+#Cuisine
+def open_cuisine_menu():
+
+    global listbox_cuisine, root_cuisine, CUISINE
+    print("\n------[Opening Cuisine Menu]------")
+
+    root_cuisine = tk.Tk()
+    root_cuisine.title("Cuisine")
+
+    root_cuisine.protocol("WM_DELETE_WINDOW", get_cuisine_selected)
+
+    CUISINE = ("Anything", "Chinese", "Malay", "Indian", "Japanese", "Thai", "Korean", "Vietnamese", "Italian", "Mexican", "Western")
+
+    listbox_cuisine = tk.Listbox(root_cuisine, selectmode="multiple", height=10)
+    listbox_cuisine.pack(padx = 10, pady= 10)
+
+    for item in CUISINE:
+        listbox_cuisine.insert(tk.END, item)
+
+    btn_cuisine = tk.Button(root_cuisine, text = "Submit", command = get_cuisine_selected)
+    btn_cuisine.pack(pady = 5)
+
+    root_cuisine.mainloop()
+
+def get_cuisine_selected():
+    global selected_cuisine
+    selected_cuisine = listbox_cuisine.curselection()
+    if not selected_cuisine:
+        print("No cuisine selected. Anything will be chosen")
+        selected_cuisine = ('Anything',)
+    else:
+        selected_cuisine = tuple(CUISINE[i] for i in selected_cuisine)
+        print("Selected Cuisine: ", selected_cuisine)
+    root_cuisine.destroy()
+    return selected_cuisine
+
 # country/currency,
 def get_country_input(country_input):
     country_input = input(country_input)
@@ -145,7 +183,7 @@ def get_country_input(country_input):
         print("Error, country not found. Please enter a valid country.")
         return "country_error"
 
-def main():
+def main_input():
     while True:
         
         name_input = get_name_input("Enter name (Enter 'quit' to quit): ")
@@ -172,13 +210,15 @@ def main():
 
         calorie_count = get_calorie_count(selected_goals)
 
+        open_cuisine_menu()
+
         while True:
             country_input = get_country_input("\nEnter country: ")
             if not country_input == "country_error":
                 print("Selected Country: ", country_input)
                 break
 
-        combined_input = [name_input, budget_input, pax_input, selected_restrictions, selected_goals, calorie_count, country_input]
+        combined_input = [name_input, budget_input, pax_input, selected_restrictions, selected_goals, calorie_count, selected_cuisine, country_input]
         all_input = (combined_input)
 
         print("         MEAL PLANNER PROFILE SEARCH        ")
@@ -189,10 +229,161 @@ def main():
         print(f"Dietary Restrictions: {selected_restrictions}")
         print(f"Dietary Goal: {selected_goals}")
         print(f"Calories: {calorie_count} kcal")
+        print(f"Cuisine: {selected_cuisine}")
         print(f"Target Country: {country_input}")
         print("="*40)
         return all_input
 
-if __name__ == "__main__":
-    profile_input = main()
-    print(profile_input)
+def main_menu():
+    while True:
+        print("\nMain Menu")
+        print("-" * 30)
+        print("1. Generate New Meal Plan\n2. View Saved Plans and Recipes\n3. Exit")
+        print("-" * 30)
+
+        choice = input("\nPlease select an option (1-3): ")
+        print()
+        
+        if choice.isdigit() and 1 <= int(choice) <= 3:
+            return int(choice)
+
+        print("Invalid choice. Please try again.")
+
+
+# Display the newly generated AI meal plan
+def display_generated_meal_plan(user_input, ai_output):
+
+    print()
+    print(f"Meal Plan for {user_input[0]}")
+    print("-" * 30)
+
+    # User input
+    print(f"Budget: ${user_input[1]:.2f}")
+    print(f"Pax: {user_input[2]}")
+    print(f"Dietary Restrictions: {user_input[3]}")
+    print(f"Dietary Goal: {user_input[4]}")
+    print(f"Calories: {user_input[5]} kcal")
+    print(f"Country: {user_input[6]}")
+
+    # AI output
+    print(f"\nTotal Grocery Cost: ${ai_output['Total_grocery_cost']:.2f}")
+
+    print("\nIngredient List:")
+
+    for ingredient in ai_output["Grocery_list"]:
+        print(
+            f"- {ingredient['ingredient_name']} "
+            f"({ingredient['Quantity']} - "
+            f"${ingredient['Price_per_ingredient']:.2f})"
+        )
+
+    print("\nRecipes:")
+
+    for i, recipe in enumerate(ai_output["Dishes"], 1):
+        print(
+            f"{i}. {recipe['dish_name']} "
+            f"[{recipe['cuisine']}] - "
+            f"Est. Price: ${recipe['price_per_meal']:.2f}"
+        )
+
+
+# Display a saved meal plan from the final JSON file
+def display_meal_plan(plan):
+
+    print()
+    print(f"Meal Plan for {plan['name']}")
+    print("-" * 30)
+
+    print(f"Total Grocery Cost: ${plan['Total_grocery_cost']:.2f}")
+
+    print("\nIngredient List:")
+
+    for ingredient in plan["Grocery_list"]:
+        print(
+            f"- {ingredient['ingredient_name']} "
+            f"({ingredient['Quantity']} - "
+            f"${ingredient['Price_per_ingredient']:.2f})"
+        )
+
+    print("\nRecipes:")
+
+    for i, recipe in enumerate(plan["Dishes"], 1):
+        print(
+            f"{i}. {recipe['dish_name']} "
+            f"[{recipe['cuisine']}] - "
+            f"Est. Price: ${recipe['price_per_meal']:.2f}"
+        )
+
+def display_all_plans(meal_plans):
+    print("-" * 30)
+    print("Saved Meal Plans")
+    print("-" * 30)
+
+    with open(meal_plans, "r") as file:
+        plans = json.load(file)
+
+        for plan in plans:
+            print(
+                f"{plan['id']}: Meal Plan for {plan['name']} "
+                f"({plan['pax']} pax) - "
+                f"${plan['Total_grocery_cost']:.2f} "
+                f"[{plan['date']}]"
+            )
+
+
+def get_selected_plan(meal_plans):
+    with open(meal_plans, "r") as file:
+        plans = json.load(file)
+
+    while True:
+        choice = input(
+            "\nEnter the ID of the meal plan you want to view "
+            "(or 'back' to return to the main menu): "
+        )
+
+        if choice.lower() == "back":
+            return None
+
+        if choice.isdigit():
+            choice = int(choice)
+
+            for plan in plans:
+                if plan["id"] == choice:
+                    return plan
+
+        print("Invalid input. Please enter a valid ID.")
+
+
+def display_recipe_details(recipe):
+    print()
+    print("-" * 30)
+    print(f"Recipe: {recipe['dish_name']} ({recipe['cuisine']})")
+    print("-" * 30)
+    print(f"Ingredients: {recipe['ingredients']}")
+    print(f"Calories: {recipe['calorie_count_per_meal_output']}")
+    print(f"Protein: {recipe['protein_count_per_meal_output']}")
+    print(f"Fats: {recipe['fats_count_per_meal']}")
+    print(f"Estimated Price: ${recipe['price_per_meal']:.2f}")
+    print("\nInstructions:")
+
+    instructions = re.split(r"(?=\d+\.\s)", recipe["recipe"])
+
+    for instruction in instructions:
+        if instruction.strip():
+            print(instruction.strip())
+
+
+def get_selected_recipe(plan):
+    while True:
+        choice = input(
+            "\nEnter the number of the recipe you want to view "
+            "(or 'back' to return to the meal plan): "
+        )
+
+        if choice.lower() == "back":
+            return False
+        if choice.isdigit() and 1 <= int(choice) <= len(plan["Dishes"]):
+            display_recipe_details(plan["Dishes"][int(choice) - 1])
+        else:
+            print("Invalid input. Please enter a valid number.")
+

@@ -31,7 +31,7 @@ test_user_input = {
 test_ai_output = {
     "pax": 1,
     "Error": "",
-    "Total_groccery_cost": 40.0,
+    "Total_grocery_cost": 40.0,
     "Grocery_list": [],
     "Dishes": test_dishes,
 }
@@ -173,7 +173,7 @@ def process_ai_response(ai_output, user_input):
     plan = {
         "pax": 0,
         "Error": "",
-        "Total_groccery_cost": 0,
+        "Total_grocery_cost": 0,
         "Grocery_list": [],
         "Dishes": [],
         "outcome": "REJECTED",
@@ -196,9 +196,9 @@ def process_ai_response(ai_output, user_input):
     else:
         # Copy the AI's details into the plan
         dishes = ai_output["Dishes"]
-        total_cost = ai_output.get("Total_groccery_cost")
+        total_cost = ai_output.get("Total_grocery_cost")
         plan["pax"] = ai_output.get("pax", 0)
-        plan["Total_groccery_cost"] = total_cost
+        plan["Total_grocery_cost"] = total_cost
         plan["Grocery_list"] = ai_output.get("Grocery_list", [])
  
         # # Budget rule (Felix)
