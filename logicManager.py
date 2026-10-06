@@ -5,25 +5,10 @@ LOW_CALORIE_MAX = 500            # calorie cap for "Low Calorie"
 HIGH_PROTEIN_MIN = 30            # protein floor (g) for "High Protein"
 HIGH_PROTEIN_MIN_RATIO = 0.25    # protein must supply >= 25% of calories
 
-
-# Test Data
-test_dishes = [
-    {"dish_name": "Grilled Chicken Salad", "calorie_count_per_meal_output": 350,
-     "protein_count_per_meal_output": 30, "fats_count_per_meal": 10, "cuisine": "American"},
-    {"dish_name": "Vegetable Stir Fry", "calorie_count_per_meal_output": 400,
-     "protein_count_per_meal_output": 15, "fats_count_per_meal": 5, "cuisine": "Asian"},
-    {"dish_name": "Beef Tacos", "calorie_count_per_meal_output": 600,
-     "protein_count_per_meal_output": 25, "fats_count_per_meal": 20, "cuisine": "Mexican"},
-    {"dish_name": "Pasta Primavera", "calorie_count_per_meal_output": 450,
-     "protein_count_per_meal_output": 20, "fats_count_per_meal": 15, "cuisine": "Italian"},
-    {"dish_name": "Salmon with Quinoa", "calorie_count_per_meal_output": 500,
-     "protein_count_per_meal_output": 35, "fats_count_per_meal": 12, "cuisine": "Seafood"},
-]
-
 test_user_input = {
     "Total_budget": 50,
-    "Dietary_restrictions": ("Eggs", "Pasta"),
-    "Meal_goal": "High Protein",
+    "Dietary_restrictions": ("Eggs"),
+    "Meal_goal": "Standard",
     "Calorie_count_per_meal_input": None,
     "Protein_per_meal_input": None,
     "Fats_per_meal": None,
@@ -35,7 +20,6 @@ test_ai_output = {
     "Error": "",
     "Total_grocery_cost": 40.0,
     "Grocery_list": [],
-    "Dishes": test_dishes,
     "Dishes": [
     {
       "dish_name": "Chicken and Bok Choy Stir-Fry with Rice",
@@ -168,14 +152,12 @@ def filter_dishes_by_dietary_rules(ai_dishes, dietary_restrictions):
 
     if len(matching) == 0 and len(dishes) > 0:
         return {
-            "fallback_used": True,
             "valid_dishes": dishes,
             "valid_dish_names": [dish.get("dish_name") for dish in dishes],
             "flagged_dishes": flagged
         }
     else:
         return {
-            "fallback_used": False,
             "flagged_count": len(flagged),
             "valid_dish_names": [dish.get("dish_name") for dish in matching],
             "flagged_dishes": flagged
@@ -274,21 +256,22 @@ def filter_dishes_by_cuisine(ai_dishes, preferred_cuisines):
                 matching.append(dish)
             else:
                 flagged.append({"dish_name": dish.get("dish_name"),"reason": f"Cuisine '{cuisine}' not in preferences"})
-
+                
     if len(matching) == 0 and len(dishes) > 0:
         return {
             "is_exact_match": False,
             "fallback_used": True,
             "valid_dishes": dishes,
-            "valid_dish_names": [dish.get("dish_name") for dish in dishes],
+            "valid_dish_names": [d.get("dish_name") for d in dishes],
+            "flagged_dishes": flagged,
         }
-    else:
-        return {
-            "is_exact_match": True,
-            "fallback_used": False,
-            "flagged_count": len(flagged),
-            "valid_dish_names": [dish.get("dish_name") for dish in matching],
-        }
+    return {
+        "is_exact_match": True,
+        "fallback_used": False,
+        "valid_dishes": matching,
+        "valid_dish_names": [d.get("dish_name") for d in matching],
+        "flagged_dishes": flagged,
+    }
 
 def process_ai_response(ai_output, user_input):
     # Step 1: The AI manager returns JSON as text, so convert it to a dictionary.
@@ -332,12 +315,11 @@ def process_ai_response(ai_output, user_input):
  
         # Budget rule
         budget_result = check_budget_compliance(plan["Total_grocery_cost"], user_input.get("Total_budget"))
-        plan["budget"] = budget_result
-        if budget_result["status"] == "REJECTED":
+        if budget_result["status"] == "REJECTED" or budget_result["status"] == "ERROR":
             plan["warnings"].append(budget_result["reason"])
  
         # Filter 1: dietary safety
-        diet = filter_dishes_by_dietary_rules(dishes, user_input.get("Diet_restriction"))
+        diet = filter_dishes_by_dietary_rules(dishes, user_input.get("Dietary_restrictions"))
         safe_dishes = []
         for dish in dishes:
             if isinstance(dish, dict) and dish.get("dish_name") in diet["valid_dish_names"]:
@@ -345,7 +327,7 @@ def process_ai_response(ai_output, user_input):
  
         # Filter 2: nutrition (multi-condition rule)
         nutrition = filter_dishes_by_nutrition(
-            dishes,
+            safe_dishes,
             user_input.get("Meal_goal"),
             user_input.get("Calorie_count_per_meal_input"),
             user_input.get("Protein_per_meal_input"),
@@ -360,40 +342,39 @@ def process_ai_response(ai_output, user_input):
         valid_dishes = cuisine["valid_dishes"]
         plan["Dishes"] = valid_dishes
         # plan["flagged_dishes"] = diet["flagged_dishes"] + nutrition["flagged_dishes"] + cuisine["flagged_dishes"]
-        plan["flagged_dishes"] = nutrition["flagged_dishes"] + cuisine["flagged_dishes"]
- 
+        plan["flagged_dishes"] = diet["flagged_dishes"] + nutrition["flagged_dishes"] + cuisine["flagged_dishes"] 
         # Decide the outcome
-        # if budget_result["status"] == "REJECT":
-        #     plan["outcome"] = "REJECTED"
-        #     plan["Error"] = budget_result["reason"]
-        # elif len(valid_dishes) == 0:
-        #     plan["outcome"] = "REJECTED"
-        #     plan["Error"] = "No dishes passed all the rules"
-        # elif budget_result["status"] == "PASS" and len(valid_dishes) / len(dishes) >= 0.8:
-        #     plan["outcome"] = "ACCEPTED"
-        # else:
-        #     plan["outcome"] = "FLAGGED"
-        if len(valid_dishes) == 0:
+        if budget_result["status"] == "REJECTED" or budget_result["status"] == "ERROR":
+            plan["outcome"] = "REJECTED"
+            plan["Error"] = budget_result["reason"]
+        elif len(valid_dishes) == 0:
             plan["outcome"] = "REJECTED"
             plan["Error"] = "No dishes passed all the rules"
+        elif budget_result["status"] == "ACCEPTED" and len(valid_dishes) / len(dishes) >= 0.5:
+            plan["outcome"] = "ACCEPTED"
         else:
             plan["outcome"] = "FLAGGED"
     return plan
 if __name__ == "__main__":
-    while True:
+        result = process_ai_response(test_ai_output, test_user_input)
+        print("Outcome:", result["outcome"])
+        print("Error:", result["Error"])
+        print("Warnings:", result["warnings"])
+        print("Dishes:", [d["dish_name"] for d in result["Dishes"]])
+        print("Flagged:", result["flagged_dishes"])
+
         budget = check_budget_compliance(test_user_input, test_ai_output)
-        print(budget["status"])
-        print(budget["reason"])
+        # print(budget["status"])
+        # print(budget["reason"])
 
         restrictions = filter_dishes_by_dietary_rules(test_ai_output["Dishes"], test_user_input["Dietary_restrictions"])
-        print("Valid dishes list:", restrictions["valid_dish_names"])
-        print("Flagged items details:", restrictions["flagged_dishes"])
+        # print("Valid dishes list:", restrictions["valid_dish_names"])
+        # print("Flagged items details:", restrictions["flagged_dishes"])
         
-        nutrition = filter_dishes_by_nutrition(test_dishes, "High Protein")
-        print(nutrition["valid_dish_names"])
-        print(nutrition["flagged_dishes"])
+        nutrition = filter_dishes_by_nutrition(test_ai_output, "High Protein")
+        # print(nutrition["valid_dish_names"])
+        # print(nutrition["flagged_dishes"])
 
         cuisine = filter_dishes_by_cuisine(nutrition["valid_dishes"], ("Anything",))
-        print(cuisine["valid_dish_names"])
-        print(cuisine["fallback_used"])
-        break
+        # print(cuisine["valid_dish_names"])
+        # print(cuisine["fallback_used"])
