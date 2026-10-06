@@ -1,0 +1,66 @@
+[
+    {
+        "Total_grocery_cost": 35.5,
+        "Grocery_list": [
+            {
+                "ingredient_name": "Chicken Breast",
+                "Price_per_ingredient": 8.5,
+                "Quantity": "500g"
+            },
+            {
+                "ingredient_name": "Rice",
+                "Price_per_ingredient": 4.0,
+                "Quantity": "1kg"
+            }
+        ],
+        "Dishes": [
+            {
+                "dish_name": "Chicken Rice",
+                "cuisine": "Chinese",
+                "recipe": "1. Cook chicken. 2. Cook rice.",
+                "calorie_count_per_meal_output": "600 kcal",
+                "protein_count_per_meal_output": "40g",
+                "fats_count_per_meal": "15g",
+                "price_per_meal": 5.5,
+                "ingredients": "Chicken Breast, Rice"
+            }
+        ],
+        "id": 1,
+        "name": "Louise",
+        "budget": 50.0,
+        "pax": 2,
+        "date": "2026-10-04"
+    },
+    {
+        "Total_grocery_cost": 35.5,
+        "Grocery_list": [
+            {
+                "ingredient_name": "Chicken Breast",
+                "Price_per_ingredient": 8.5,
+                "Quantity": "500g"
+            },
+            {
+                "ingredient_name": "Rice",
+                "Price_per_ingredient": 4.0,
+                "Quantity": "1kg"
+            }
+        ],
+        "Dishes": [
+            {
+                "dish_name": "Chicken Rice",
+                "cuisine": "Chinese",
+                "recipe": "1. Cook chicken. 2. Cook rice.",
+                "calorie_count_per_meal_output": "600 kcal",
+                "protein_count_per_meal_output": "40g",
+                "fats_count_per_meal": "15g",
+                "price_per_meal": 5.5,
+                "ingredients": "Chicken Breast, Rice"
+            }
+        ],
+        "id": 2,
+        "name": "Louise",
+        "budget": 50.0,
+        "pax": 2,
+        "date": "2026-10-04"
+    }
+]

@@ -45,16 +45,16 @@ while True:
             else:
                 continue
 
-        filtered_output = logicManager.process_ai_response(
-            ai_output,
-            user_input
-        )
+        plan = logicManager.get_filtered_plan(ai_output, user_input)
+
+        if plan is None:
+            continue
 
         inputManager.display_generated_meal_plan(
             user_input,
-            ai_output
+            plan
         )
-        
+
         inputManager.get_accept_reject_menu("Are you satisfied? (Y/N): ")
         inputManager.get_select_dish()
         

@@ -2,6 +2,7 @@ import tkinter as tk
 import pycountry
 import json
 import re
+import dataManager
 
 # name,
 def get_name_input(name_input):
@@ -399,8 +400,17 @@ def load_AI_output():
 def get_accept_reject_menu(dish_selection):
     dish_selection = input(dish_selection)
     if dish_selection == 'y':
+
+        saved_successfully = dataManager.save_record(user_input=True, meal_plan=True)  
+        
+        if saved_successfully:
+            print("Record saved successfully!")
+        else:
+            print("Warning: Failed to save the record data.")
+            
         print("Thank you for using our service. Please select your desired recipe.")
         return 'y'
+        
     elif dish_selection == 'n':
         print("We are sorry for the inconvenience. What would you like excluded?")
         return 'n'
