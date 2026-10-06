@@ -71,3 +71,39 @@ def save_record(user_input, meal_plan):
 
     except (OSError, TypeError):
         return False
+
+
+def get_all_records():
+    return load_records()
+
+
+def get_record_by_id(record_id):
+    records = load_records()
+
+    for record in records:
+        if record.get("id") == record_id:
+            return record
+
+    return None
+
+
+def search_records(search_word):
+    records = load_records()
+
+    search_word = str(search_word).strip().lower()
+
+    if search_word == "":
+        return []
+
+    results = []
+
+    for record in records:
+        record_text = json.dumps(
+            record,
+            ensure_ascii=False
+        ).lower()
+
+        if search_word in record_text:
+            results.append(record)
+
+    return results
