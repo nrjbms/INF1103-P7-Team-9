@@ -253,6 +253,7 @@ def main_menu():
 # Display the newly generated AI meal plan
 def display_generated_meal_plan(user_input, ai_output):
 
+
     print()
     print(f"Meal Plan for {user_input[0]}")
     print("-" * 30)
@@ -263,7 +264,8 @@ def display_generated_meal_plan(user_input, ai_output):
     print(f"Dietary Restrictions: {user_input[3]}")
     print(f"Dietary Goal: {user_input[4]}")
     print(f"Calories: {user_input[5]} kcal")
-    print(f"Country: {user_input[6]}")
+    print(f"Cuisine: {user_input[6]}")
+    print(f"Country: {user_input[7]}")
 
     # AI output
     print(f"\nTotal Grocery Cost: ${ai_output['Total_grocery_cost']:.2f}")
