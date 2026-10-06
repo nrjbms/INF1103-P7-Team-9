@@ -389,82 +389,45 @@ def get_selected_recipe(plan):
         else:
             print("Invalid input. Please enter a valid number.")
 
-def load_AI_output():
-        global read_ai_output
-        try:
-            with open("sampleoutput.json", "r") as file:
-                read_ai_output = json.load(file)             
-        except json.JSONDecodeError:
-                print("Error reading AI Output.")    
-
-def get_accept_reject_menu(dish_selection):
-    dish_selection = input(dish_selection)
+def get_accept_reject_menu(ai_dishes, dish_selection_prompt, user_input, dataManager):
+    if ai_dishes is None:
+        ai_dishes = []
+        
+    dishes = [dish for dish in ai_dishes if isinstance(dish, dict)]
+    
+    dish_selection = input(dish_selection_prompt)
+    
     if dish_selection == 'y':
+        selected_dish_data = {}
+        
+        try:
+            selected_dish_idx = int(input("Enter the number of the dish to view its recipe: "))
+            if 1 <= selected_dish_idx <= len(dishes):
+                selected_dish_data = dishes[selected_dish_idx - 1]
+                
+                print(f"\n--- Recipe for {selected_dish_data.get('dish_name')} ---")
+                print(f"Ingredients: {selected_dish_data.get('ingredients', 'Ingredients not found')}")
+                print(f"Recipe\n======= \n{selected_dish_data.get('recipe', 'Recipe not available.')}")
+            else:
+                print("Invalid dish number.")
+        except ValueError:
+            print("Please enter a valid number.")
 
-        saved_successfully = dataManager.save_record(user_input=True, meal_plan=True)  
+        saved_successfully = dataManager.save_record(user_input, selected_dish_data)  
         
         if saved_successfully:
             print("Record saved successfully!")
         else:
             print("Warning: Failed to save the record data.")
             
-        print("Thank you for using our service. Please select your desired recipe.")
-        return 'y'
+        print("Thank you for using our service.")
+        return 'y', selected_dish_data, ai_dishes
         
     elif dish_selection == 'n':
-        print("We are sorry for the inconvenience. What would you like excluded?")
-        return 'n'
+        print("We are sorry for the inconvenience.")
+        ingredient_exclude = input(str("What would you like excluded? "))
+        print("Excluded: ", ingredient_exclude)
+        return 'n', None, ingredient_exclude
     else:
         print("Error. Please select y/n.")
-        return dish_selection
-
-def get_select_dish():
-    try:
-        selected_dish = int(input("Enter the number of the dish to view its recipe: "))
-        if 1 <= selected_dish <= len(read_ai_output["Dishes"]):
-            selected_dish = read_ai_output["Dishes"][selected_dish - 1]
-            print(f"\n--- Recipe for {selected_dish.get('dish_name')} ---")
-            print(f"ingredients: {selected_dish.get('ingredients', 'Ingredients not found')}")
-            print(f"Recipe\n======= \n{selected_dish.get('recipe', 'Recipe not available.')}")
-            return selected_dish
-        else:
-            print("Invalid dish number.")
-    except:
-        print("Please enter a valid number.")
-
-
-def save_recipe(recipe):
-    filename = "recipe.json"
-    try:
-        with open(filename, "r") as file:
-                recipes = json.load(file)
-                if not isinstance(recipes, list):
-                    recipes = [recipes]
-    except json.JSONDecodeError:
-            print(f"Warning: '{filename}' was corrupted. Starting a new list.")
-            recipes = []
-    recipes.append(recipe)
-
-    with open(filename, "w") as file:
-        json.dump(recipes, file, indent=4)        
-
-def get_main():
-    while True:
-        dish_selection = get_accept_reject_menu("Are you satisfied with the dishes? (y/n): ")
-        if dish_selection == 'y':
-            selected_dish = get_select_dish()
-            save_recipe(selected_dish)
-            return selected_dish, None
-        else:
-            item_exclusion = input("Enter items to be excluded: ")
-            return None, item_exclusion
-
-if __name__ == "__main__":
-    load_AI_output()
-    selected_dish, item_exclusion = get_main()
-    if item_exclusion:
-        print(f"\nExcluded: {item_exclusion}")
-    elif selected_dish:
-        print(f"\n--- Recipe for {selected_dish.get('dish_name')} ---")
-        print(f"ingredients: {selected_dish.get('ingredients', 'Ingredients not found')}")
-        print(f"Recipe\n======= \n{selected_dish.get('recipe', 'Recipe not available.')}")
+        return dish_selection, None    

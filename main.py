@@ -55,8 +55,11 @@ while True:
             plan
         )
 
-        inputManager.get_accept_reject_menu("Are you satisfied? (Y/N): ")
-        inputManager.get_select_dish()
+        inputManager.get_accept_reject_menu(
+            plan["Dishes"],     
+            "Accept? (y/n): ",   
+            user_input,          
+            dataManager)          
         
         
 
