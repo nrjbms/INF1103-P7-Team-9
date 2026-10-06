@@ -198,8 +198,11 @@ def filter_by_name(name):
 
     name = str(name).strip().lower()
 
+    if name == "":
+        return []
+
     for record in records:
-        saved_name = str(record.get("name", "")).lower()
+        saved_name = str(record.get("name", "")).strip().lower()
 
         if saved_name == name:
             results.append(record)
