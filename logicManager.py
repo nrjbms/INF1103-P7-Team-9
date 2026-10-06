@@ -21,6 +21,8 @@ test_dishes = [
 ]
 
 test_user_input = {
+    "Total_budget": 50,
+    "Dietary_restrictions": ("Eggs", "Pasta"),
     "Meal_goal": "High Protein",
     "Calorie_count_per_meal_input": None,
     "Protein_per_meal_input": None,
@@ -34,6 +36,58 @@ test_ai_output = {
     "Total_grocery_cost": 40.0,
     "Grocery_list": [],
     "Dishes": test_dishes,
+    "Dishes": [
+    {
+      "dish_name": "Chicken and Bok Choy Stir-Fry with Rice",
+      "cuisine": "Chinese",
+      "recipe": "1. Dice 200g chicken breast and slice 1 clove garlic. 2. Heat 1 tbsp oil in a pan, fry garlic until fragrant, then cook chicken until lightly browned. 3. Add 125g chopped bok choy and 1 tbsp soy sauce. Stir-fry for 3-4 minutes until cooked through. 4. Serve hot with 1 cup cooked jasmine rice.",
+      "calorie_count_per_meal_output": "540 kcal",
+      "protein_count_per_meal_output": "42g",
+      "fats_count_per_meal": "14g",
+      "price_per_meal": 3.1,
+      "ingredients": "Chicken Breast, Bok Choy, Garlic, Light Soy Sauce, Cooking Oil, Jasmine Rice"
+    },
+    {
+      "dish_name": "Minced Pork Bolognese Spaghetti",
+      "cuisine": "Italian",
+      "recipe": "1. Boil 100g spaghetti in salted water until al dente. 2. In a skillet, sauté diced onion and garlic in 1 tbsp oil. 3. Add 150g minced pork and cook until browned. 4. Pour in 200g canned chopped tomatoes, simmer for 10 minutes until sauce thickens, then toss with the spaghetti.",
+      "calorie_count_per_meal_output": "620 kcal",
+      "protein_count_per_meal_output": "34g",
+      "fats_count_per_meal": "18g",
+      "price_per_meal": 3.3,
+      "ingredients": "Spaghetti Pasta, Minced Pork, Canned Chopped Tomatoes, Onion, Garlic, Cooking Oil"
+    },
+    {
+      "dish_name": "Braised Chicken and Potato Curry",
+      "cuisine": "Malay",
+      "recipe": "1. Dice 200g chicken breast, 1 potato, and 1/2 carrot. 2. Sauté chopped onion and garlic in 1 tbsp oil, then stir in 1.5 tbsp curry powder with a splash of water to form a paste. 3. Add chicken, potatoes, carrots, and 1.5 cups water. Simmer covered for 20 minutes until potatoes are tender. 4. Serve over steamed jasmine rice.",
+      "calorie_count_per_meal_output": "580 kcal",
+      "protein_count_per_meal_output": "40g",
+      "fats_count_per_meal": "15g",
+      "price_per_meal": 3.4,
+      "ingredients": "Chicken Breast, Potatoes, Carrots, Curry Powder, Onion, Garlic, Cooking Oil, Jasmine Rice"
+    },
+    {
+      "dish_name": "Tofu and Egg Donburi Bowl",
+      "cuisine": "Japanese",
+      "recipe": "1. Slice 300g firm tofu and 1/2 onion. 2. In a skillet, simmer sliced onions in 1/2 cup water, 1 tbsp soy sauce, and a pinch of sugar. 3. Add tofu slices and cook for 3 minutes. 4. Beat 2 eggs and pour over the simmering mixture. Cover and cook on low heat until eggs are softly set. 5. Slide over a warm bowl of rice and garnish with spring onions.",
+      "calorie_count_per_meal_output": "510 kcal",
+      "protein_count_per_meal_output": "28g",
+      "fats_count_per_meal": "16g",
+      "price_per_meal": 2.2,
+      "ingredients": "Firm Tofu, Fresh Eggs, Onion, Spring Onions, Light Soy Sauce, Jasmine Rice"
+    },
+    {
+      "dish_name": "Classic Egg and Vegetable Fried Rice",
+      "cuisine": "Chinese",
+      "recipe": "1. Heat 1 tbsp oil in a wok. Beat 2 eggs and scramble lightly, then set aside. 2. Sauté minced garlic, 1 diced carrot, and 100g shredded cabbage until crisp-tender. 3. Add 1.5 cups cooled cooked jasmine rice and stir-fry on high heat. 4. Return eggs to wok, season with 1.5 tbsp soy sauce, toss well, and top with chopped spring onions.",
+      "calorie_count_per_meal_output": "490 kcal",
+      "protein_count_per_meal_output": "18g",
+      "fats_count_per_meal": "15g",
+      "price_per_meal": 1.9,
+      "ingredients": "Jasmine Rice, Fresh Eggs, Carrots, Cabbage, Garlic, Light Soy Sauce, Spring Onions, Cooking Oil"
+    }
+  ]
 }
 
 def parse_number(value):
@@ -51,6 +105,81 @@ def parse_number(value):
         if number != "":
             return float(number)
     return None
+
+
+# Budget Rule
+def check_budget_compliance(total_grocery_cost, total_budget):
+    total_grocery_cost = parse_number (test_ai_output.get("Total_grocery_cost")) or 0.0
+    total_budget = parse_number (test_user_input.get("Total_budget")) or 0.0
+    
+    if total_budget is None:
+        return {"status": "ERROR", "reason": "Budget not found."}
+
+    elif total_grocery_cost is None:
+        return {"status": "ERROR", "reason": "Grocery cost not found."}
+    
+    elif total_grocery_cost > total_budget:
+        return {
+            "status": "REJECTED", 
+            "reason": f"Total grocery cost (${total_grocery_cost:.2f}) exceeds total budget (${total_budget:.2f})"
+        }
+    return {
+        "status": "ACCEPTED", 
+        "reason": f"Total grocery cost (${total_grocery_cost:.2f}) is within total budget (${total_budget:.2f})"
+    }
+
+# Dietary Restrictions Filter
+def filter_dishes_by_dietary_rules(ai_dishes, dietary_restrictions):
+    if ai_dishes is None:
+        ai_dishes = []
+    dishes = [dish for dish in ai_dishes if isinstance(dish, dict)]
+
+    if dietary_restrictions is None:
+        dietary_restrictions = ()
+    elif isinstance(dietary_restrictions, str):
+        dietary_restrictions = (dietary_restrictions,)
+
+
+    restrictions = [r.strip().lower() for r in dietary_restrictions if r.strip().lower() != "none"]
+    
+
+    matching = []
+    flagged = []
+    if "None" in restrictions or not restrictions:
+        matching = dishes
+    else:
+        for dish in dishes:
+            dish_dietary = str(dish.get("Dietary_restrictions", "")).strip().lower()
+            ingredients = str(dish.get("ingredients")).strip().lower()
+            name = dish.get("dish_name")
+            
+            restricted_ingredients = []
+            for i in restrictions:
+                if i in ingredients or i in dish_dietary:
+                    restricted_ingredients.append(i)
+            
+            if restricted_ingredients:
+                flagged.append({
+                    "dish_name": name,
+                    "reason": f"Dish contains restricted ingredients: {', '.join(restricted_ingredients)}"
+                })
+            else:
+                matching.append(dish)
+
+    if len(matching) == 0 and len(dishes) > 0:
+        return {
+            "fallback_used": True,
+            "valid_dishes": dishes,
+            "valid_dish_names": [dish.get("dish_name") for dish in dishes],
+            "flagged_dishes": flagged
+        }
+    else:
+        return {
+            "fallback_used": False,
+            "flagged_count": len(flagged),
+            "valid_dish_names": [dish.get("dish_name") for dish in matching],
+            "flagged_dishes": flagged
+        }
 
 
 # Macro & Nutritional Rules (Multi-Condition Rule)
@@ -201,18 +330,18 @@ def process_ai_response(ai_output, user_input):
         plan["Total_grocery_cost"] = total_cost
         plan["Grocery_list"] = ai_output.get("Grocery_list", [])
  
-        # # Budget rule (Felix)
-        # budget_result = check_budget_compliance(total_cost, user_input.get("Total_budget"))
-        # plan["budget"] = budget_result
-        # if budget_result["status"] == "WARNING":
-        #     plan["warnings"].append(budget_result["reason"])
+        # Budget rule
+        budget_result = check_budget_compliance(plan["Total_grocery_cost"], user_input.get("Total_budget"))
+        plan["budget"] = budget_result
+        if budget_result["status"] == "REJECTED":
+            plan["warnings"].append(budget_result["reason"])
  
-        # # Filter 1: dietary safety (Felix)
-        # diet = filter_dishes_by_dietary_rules(dishes, user_input.get("Diet_restriction"))
-        # safe_dishes = []
-        # for dish in dishes:
-        #     if isinstance(dish, dict) and dish.get("dish_name") in diet["valid_dish_names"]:
-        #         safe_dishes.append(dish)
+        # Filter 1: dietary safety
+        diet = filter_dishes_by_dietary_rules(dishes, user_input.get("Diet_restriction"))
+        safe_dishes = []
+        for dish in dishes:
+            if isinstance(dish, dict) and dish.get("dish_name") in diet["valid_dish_names"]:
+                 safe_dishes.append(dish)
  
         # Filter 2: nutrition (multi-condition rule)
         nutrition = filter_dishes_by_nutrition(
@@ -251,10 +380,20 @@ def process_ai_response(ai_output, user_input):
             plan["outcome"] = "FLAGGED"
     return plan
 if __name__ == "__main__":
-    nutrition = filter_dishes_by_nutrition(test_dishes, "High Protein")
-    print(nutrition["valid_dish_names"])
-    print(nutrition["flagged_dishes"])
+    while True:
+        budget = check_budget_compliance(test_user_input, test_ai_output)
+        print(budget["status"])
+        print(budget["reason"])
 
-    cuisine = filter_dishes_by_cuisine(nutrition["valid_dishes"], ("Anything",))
-    print(cuisine["valid_dish_names"])
-    print(cuisine["fallback_used"])
+        restrictions = filter_dishes_by_dietary_rules(test_ai_output["Dishes"], test_user_input["Dietary_restrictions"])
+        print("Valid dishes list:", restrictions["valid_dish_names"])
+        print("Flagged items details:", restrictions["flagged_dishes"])
+        
+        nutrition = filter_dishes_by_nutrition(test_dishes, "High Protein")
+        print(nutrition["valid_dish_names"])
+        print(nutrition["flagged_dishes"])
+
+        cuisine = filter_dishes_by_cuisine(nutrition["valid_dishes"], ("Anything",))
+        print(cuisine["valid_dish_names"])
+        print(cuisine["fallback_used"])
+        break
