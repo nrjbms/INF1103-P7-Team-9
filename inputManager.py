@@ -39,76 +39,21 @@ def get_pax_input(pax_input):
 
 # dietary restrictions,
 def open_restrictions_menu():
-
-    global root_restrictions, listbox_restrictions, RESTRICTIONS
-    print("\n------[Opening Dietary Restrictions Menu]------")
-
-    root_restrictions = tk.Tk()
-    root_restrictions.title("Dietary Restrictions")
-
-    root_restrictions.protocol("WM_DELETE_WINDOW", get_restrictions_selected)
-
-    RESTRICTIONS = ("Seafood", "Nuts", "Dairy", "Wheat", "Eggs", "Halal")
-
-    listbox_restrictions = tk.Listbox(root_restrictions, selectmode="multiple", height=5)
-    listbox_restrictions.pack(padx = 10, pady= 10)
-
-    # 2. Populate the listbox from the tuple
-    for item in RESTRICTIONS:
-        listbox_restrictions.insert(tk.END, item)
-
-    btn_restrictions = tk.Button(root_restrictions, text = "Submit", command = get_restrictions_selected)
-    btn_restrictions.pack(pady = 5)
-
-    root_restrictions.mainloop()
-
-def get_restrictions_selected():
-    global selected_restrictions
-    selected_restrictions = listbox_restrictions.curselection()
-    if not selected_restrictions:
+    selected = prompt_menu("Dietary Restrictions Menu", RESTRICTIONS, multiple=True)
+    if selected is None:
         print("No dietary restriction selected.")
-        selected_restrictions = ('None',)
-    else:
-        selected_restrictions = tuple(RESTRICTIONS[i] for i in selected_restrictions)
-        print("Selected Dietary Restrictions: ", selected_restrictions)
-    root_restrictions.destroy()
-    return selected_restrictions
+        return ('None',)
+    print("Selected Dietary Restrictions: ", selected)
+    return selected
 
 # meal goal,
 def open_goal_menu():
+    selected = prompt_menu("Dietary Goal Menu", GOALS, multiple=False)
+    if selected is None:
+        return ('None',)
+    print("Selected Dietary Goals: ", selected)
+    return selected
 
-    global listbox_goal, root_goal, GOALS
-    print("\n------[Opening Dietary Goal Menu]------")
-
-    root_goal = tk.Tk()
-    root_goal.title("Dietary Goals")
-
-    root_goal.protocol("WM_DELETE_WINDOW", get_goal_selected)
-
-    GOALS = ("Standard", "Low Calories", "High Calories", "Custom")
-
-    listbox_goal = tk.Listbox(root_goal, selectmode="single", height=5)
-    listbox_goal.pack(padx = 10, pady= 10)
-
-    # 2. Populate the listbox from the tuple
-    for item in GOALS:
-        listbox_goal.insert(tk.END, item)
-
-    btn = tk.Button(root_goal, text = "Submit", command = get_goal_selected)
-    btn.pack(pady = 5)
-
-    root_goal.mainloop()
-
-def get_goal_selected():
-    global selected_goals
-    selected_goals = listbox_goal.curselection()
-    if not selected_goals:
-            selected_goals = ('None',)
-    else:
-        selected_goals = tuple(GOALS[i] for i in selected_goals)
-        print("Selected Dietary Goals: ", selected_goals)
-    root_goal.destroy()
-    return selected_goals
 
 def get_calorie_count(selected_goals): 
 
@@ -140,39 +85,51 @@ def get_calorie_count(selected_goals):
 
 #Cuisine
 def open_cuisine_menu():
-
-    global listbox_cuisine, root_cuisine, CUISINE
-    print("\n------[Opening Cuisine Menu]------")
-
-    root_cuisine = tk.Tk()
-    root_cuisine.title("Cuisine")
-
-    root_cuisine.protocol("WM_DELETE_WINDOW", get_cuisine_selected)
-
-    CUISINE = ("Anything", "Chinese", "Malay", "Indian", "Japanese", "Thai", "Korean", "Vietnamese", "Italian", "Mexican", "Western")
-
-    listbox_cuisine = tk.Listbox(root_cuisine, selectmode="multiple", height=10)
-    listbox_cuisine.pack(padx = 10, pady= 10)
-
-    for item in CUISINE:
-        listbox_cuisine.insert(tk.END, item)
-
-    btn_cuisine = tk.Button(root_cuisine, text = "Submit", command = get_cuisine_selected)
-    btn_cuisine.pack(pady = 5)
-
-    root_cuisine.mainloop()
-
-def get_cuisine_selected():
-    global selected_cuisine
-    selected_cuisine = listbox_cuisine.curselection()
-    if not selected_cuisine:
+    selected = prompt_menu("Cuisine Menu", CUISINE, multiple=True)
+    if selected is None:
         print("No cuisine selected. Anything will be chosen")
-        selected_cuisine = ('Anything',)
+        return ('Anything',)
+    print("Selected Cuisine: ", selected)
+    return selected
+
+
+# Selection Menu
+RESTRICTIONS = ("Seafood", "Nuts", "Dairy", "Wheat", "Eggs", "Halal")
+GOALS = ("Standard", "Low Calories", "High Calories", "Custom")
+CUISINE = ("Anything", "Chinese", "Malay", "Indian", "Japanese", "Thai",
+           "Korean", "Vietnamese", "Italian", "Mexican", "Western")
+
+def prompt_menu(title, options, multiple):
+    print(f"\n------[{title}]------")
+    for i, item in enumerate(options, 1):
+        print(f"{i}. {item}")
+
+    if multiple:
+        prompt = "Enter number(s) separated by commas (or press Enter to skip): "
     else:
-        selected_cuisine = tuple(CUISINE[i] for i in selected_cuisine)
-        print("Selected Cuisine: ", selected_cuisine)
-    root_cuisine.destroy()
-    return selected_cuisine
+        prompt = "Enter a number (or press Enter to skip): "
+
+    while True:
+        raw = input(prompt).strip()
+
+        if raw == "":
+            return None
+
+        parts = [p.strip() for p in raw.split(",") if p.strip()]
+
+        valid = bool(parts) and all(
+            p.isdigit() and 1 <= int(p) <= len(options) for p in parts
+        )
+        if not valid:
+            print(f"Error. Please enter number(s) between 1 and {len(options)}.")
+            continue
+
+        if not multiple and len(parts) > 1:
+            print("Error. Please choose only one option.")
+            continue
+
+        indexes = sorted(set(int(p) - 1 for p in parts))
+        return tuple(options[i] for i in indexes)
 
 # country/currency,
 def get_country_input(country_input):
@@ -205,13 +162,13 @@ def main_input():
                 print("Number of pax: ", pax_input)
                 break
 
-        open_restrictions_menu()
+        selected_restrictions = open_restrictions_menu()
 
-        open_goal_menu()
+        selected_goals = open_goal_menu()
 
         calorie_count = get_calorie_count(selected_goals)
 
-        open_cuisine_menu()
+        selected_cuisine = open_cuisine_menu()
 
         while True:
             country_input = get_country_input("\nEnter country: ")
@@ -389,45 +346,47 @@ def get_selected_recipe(plan):
         else:
             print("Invalid input. Please enter a valid number.")
 
-def get_accept_reject_menu(ai_dishes, dish_selection_prompt, user_input, dataManager):
-    if ai_dishes is None:
-        ai_dishes = []
-        
-    dishes = [dish for dish in ai_dishes if isinstance(dish, dict)]
-    
-    dish_selection = input(dish_selection_prompt)
-    
+PLAN_KEYS = ("pax", "Total_grocery_cost", "Grocery_list", "Dishes")
+
+def get_accept_reject_menu(plan, dish_selection_prompt, user_input, dataManager):
+    if not isinstance(plan, dict):
+        plan = {}
+
+    dishes = [dish for dish in plan.get("Dishes", []) if isinstance(dish, dict)]
+
+    dish_selection = input(dish_selection_prompt).strip().lower()
+
     if dish_selection == 'y':
-        selected_dish_data = {}
-        
         try:
             selected_dish_idx = int(input("Enter the number of the dish to view its recipe: "))
             if 1 <= selected_dish_idx <= len(dishes):
-                selected_dish_data = dishes[selected_dish_idx - 1]
-                
-                print(f"\n--- Recipe for {selected_dish_data.get('dish_name')} ---")
-                print(f"Ingredients: {selected_dish_data.get('ingredients', 'Ingredients not found')}")
-                print(f"Recipe\n======= \n{selected_dish_data.get('recipe', 'Recipe not available.')}")
+                dish = dishes[selected_dish_idx - 1]
+                print(f"\n--- Recipe for {dish.get('dish_name')} ---")
+                print(f"Ingredients: {dish.get('ingredients', 'Ingredients not found')}")
+                print(f"Recipe\n======= \n{dish.get('recipe', 'Recipe not available.')}")
             else:
                 print("Invalid dish number.")
         except ValueError:
             print("Please enter a valid number.")
 
-        saved_successfully = dataManager.save_record(user_input, selected_dish_data)  
-        
+        # Save the entire plan (grocery list, total cost, all dishes)
+        plan_to_save = {key: plan[key] for key in PLAN_KEYS if key in plan}
+        saved_successfully = dataManager.save_record(user_input, plan_to_save)
+
         if saved_successfully:
             print("Record saved successfully!")
         else:
             print("Warning: Failed to save the record data.")
-            
+
         print("Thank you for using our service.")
-        return 'y', selected_dish_data, ai_dishes
-        
+        return 'y', plan_to_save, dishes
+
     elif dish_selection == 'n':
         print("We are sorry for the inconvenience.")
-        ingredient_exclude = input(str("What would you like excluded? "))
+        ingredient_exclude = input("What would you like excluded? ")
         print("Excluded: ", ingredient_exclude)
         return 'n', None, ingredient_exclude
+
     else:
         print("Error. Please select y/n.")
-        return dish_selection, None    
+        return dish_selection, None, None

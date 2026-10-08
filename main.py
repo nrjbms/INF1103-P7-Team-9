@@ -56,7 +56,7 @@ while True:
         )
 
         inputManager.get_accept_reject_menu(
-            plan["Dishes"],     
+            plan,     
             "Accept? (y/n): ",   
             user_input,          
             dataManager)          
