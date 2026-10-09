@@ -32,6 +32,7 @@ def get_budget_input(budget_input):
             print("Error. Please enter a valid number")
             return
     else:
+        print("Error. Please enter a valid number")
         return
 
 # pax per,
@@ -70,48 +71,63 @@ def get_calorie_count(selected_goals):
                 calorie_count = 650
                 protein_count = 27
                 fat_count = 20
-                print("Calorie Count: ", calorie_count)
-                print("Protein Count: ", protein_count)
-                print("Fat_Count: ", fat_count)                
+                print(f"Calorie Count: {calorie_count}kcal")
+                print(f"Protein Count: {protein_count}g")
+                print(f"Fat_Count: {fat_count}g")
+
             case('Low Calories',):
                 calorie_count = 400
                 protein_count = 22
                 fat_count = 15
-                print("Calorie Count: ", calorie_count)
-                print("Protein Count: ", protein_count)
-                print("Fat_Count: ", fat_count)                
+                print(f"Calorie Count: {calorie_count}kcal")
+                print(f"Protein Count: {protein_count}g")
+                print(f"Fat_Count: {fat_count}g")
+
             case('High Protein',):
                 calorie_count = 800
                 protein_count = 35
                 fat_count = 25
-                print("Calorie Count: ", calorie_count)
-                print("Protein Count: ", protein_count)
-                print("Fat_Count: ", fat_count)
-            case('Custom Macros',):
-                calorie_count = input("Please enter your desired calories(kcal): ")
-                protein_count = input("Please enter your desired protein(g):")
-                fat_count = input("Please enter your desired fats(g): ")
+                print(f"Calorie Count: {calorie_count}kcal")
+                print(f"Protein Count: {protein_count}g")
+                print(f"Fat_Count: {fat_count}g")
 
-                if calorie_count.isdigit() and protein_count.isdigit() and fat_count.isdigit():
-                    calorie_count = int(calorie_count)
-                    protein_count = int(protein_count)
-                    fat_count = int(fat_count)
-                    print(f"Your selected goals are: ", {calorie_count}, {protein_count}, {fat_count})
-                else:
-                    print("Goal not defined. Standard will be chosen")
-                    calorie_count = 550
-                    protein_count = 27
-                    fat_count = 20
+            case('Custom Macros',):
+
+                while True:
+                        calorie_count = input("Enter calorie goal(kcal): ")
+                        protein_count = input("Enter protein goal (g): ")
+                        fat_count = input("Enter fat goal (g): ")
+
+                        if calorie_count.isdigit() and protein_count.isdigit() and fat_count.isdigit():
+                            calorie_count = int(calorie_count)
+                            protein_count = int(protein_count)
+                            fat_count = int(fat_count)
+                            
+                            print(f"Calorie Count: {calorie_count}kcal")
+                            print(f"Protein Count: {protein_count}g")
+                            print(f"Fat_Count: {fat_count}g")
+                            break
+                        else:
+                            print("Invalid input. Please try again.\n")
+
             case('None',):
                 print("Since you have not selected a calorie goal, Standard will be chosen")
                 calorie_count = 550    
                 protein_count = 27
-                fat_count = 20          
+                fat_count = 20
+                print(f"Calorie Count: {calorie_count}kcal")
+                print(f"Protein Count: {protein_count}g")
+                print(f"Fat_Count: {fat_count}g")                
+
             case _:
                 print("Goal not defined. Standard will be chosen")
                 calorie_count = 550
                 protein_count = 27
                 fat_count = 20
+                print(f"Calorie Count: {calorie_count}kcal")
+                print(f"Protein Count: {protein_count}g")
+                print(f"Fat_Count: {fat_count}g")
+                     
     return calorie_count, protein_count, fat_count
 
 #Cuisine
