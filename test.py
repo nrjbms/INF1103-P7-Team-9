@@ -21,7 +21,7 @@ while True:
             None
         )
 
-        ai_output = aiManager.GeminiAPI(prompt)
+        ai_output = aiManager.HCodeGeminiAPI(prompt)
 
         if "error" in ai_output:
             print("Error found:", ai_output)
@@ -36,7 +36,7 @@ while True:
                     None
                 )
 
-                ai_output = aiManager.GeminiAPI(prompt)
+                ai_output = aiManager.HCodeGeminiAPI(prompt)
 
                 if "error" in ai_output:
                     print("Error found again:", ai_output)
@@ -51,19 +51,19 @@ while True:
             continue
 
         inputManager.display_generated_meal_plan(user_input, plan)
-
         response, plan_to_save, exclude = inputManager.get_accept_reject_menu(plan, "Accept? (y/n): ",user_input, dataManager)  
-                
+        
         if response == "n":
-            again = input("Do you want to regenerate? (Yes/No): ")    
+            again = input("Do you want to regenerate? (Yes/No): ")
             
             if again.lower() == "yes":
-                prompt = aiManager.craftprompt(user_input[2],user_input[1],user_input[6], exclude)
-                ai_output = aiManager.GeminiAPI(prompt)
+                    prompt = aiManager.craftprompt(user_input[2],user_input[1],user_input[6], exclude)
+                    ai_output = aiManager.HCodeGeminiAPI(prompt)
             else:
                 continue
         else: 
             continue
+        
         
 
     elif choice == 2:
