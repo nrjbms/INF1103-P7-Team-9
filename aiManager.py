@@ -15,31 +15,6 @@ client = genai.Client()
 def time_out():
     return True
 
-#checks if data is valid
-def validatedata(pax, total_grocery_cost, country,exclusion):
-    try:
-        float(total_grocery_cost.strip())
-        valid_grocery = True
-    except:
-        valid_grocery = False
-    valid_pax = pax.isdigit()
-    valid_country = isinstance(country,str)    
-    valid_exclusion = isinstance(exclusion,str)
-    errormsg = ""
-    if valid_pax == False:
-        errormsg = errormsg + "!! Please key in Pax as a valid number \n"
-    if valid_grocery == False:
-        errormsg = errormsg +"!! Please key in Total grocery Cost as a valid number \n"
-    if valid_country == False:
-        errormsg = errormsg +"!! Please key in a valid Country"
-    if valid_exclusion == False:
-        errormsg = errormsg + "!! Please key in a valid exclusion"
-    #return prompt if data is correct
-    if valid_pax == True and valid_grocery == True and valid_country == True:
-        return (True,"")
-    else:
-        return (False,errormsg)
-
 #craft the prompt to be fed into the Gemini API Call
 def craftprompt(pax, total_grocery_cost, country,exclusion):
         return f"""
