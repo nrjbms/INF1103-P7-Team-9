@@ -1,4 +1,5 @@
 import json
+import math
 import re
 from dietaryRules import RESTRICTED_KEYWORDS, RESTRICTION_EXCEPTIONS
 
@@ -32,8 +33,8 @@ def check_budget_compliance(total_grocery_cost, total_budget):
     total_grocery_cost = parse_number(total_grocery_cost)
     total_budget = parse_number(total_budget)
     
-    if total_budget is None:
-        return {"status": "ERROR", "reason": "Budget not found."}
+    if total_budget is None or math.isnan(total_budget) or math.isinf(total_budget):
+        return {"status": "ERROR", "reason": "Budget is not a valid number."}
 
     elif total_grocery_cost is None:
         return {"status": "ERROR", "reason": "Grocery cost not found."}
@@ -383,8 +384,8 @@ def build_user_input_dict(user_input):
         "Dietary_restrictions": get(3),
         "Meal_goal": goal,
         "Calorie_count_per_meal_input": per_meal_cal,
-        "Protein_per_meal_input": None,
-        "Fats_per_meal": None,
+        "Protein_per_meal_input": parse_number(get(8)),
+        "Fats_per_meal": parse_number(get(9)),
         "Cuisine": get(6),
     }
 
