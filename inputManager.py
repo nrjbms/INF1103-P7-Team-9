@@ -1,4 +1,3 @@
-import tkinter as tk
 import pycountry
 import json
 import re
@@ -11,7 +10,6 @@ def welcome_msg():
     print("Budget Meal Planner")
     print("=" *50)
 
-# name,
 def get_name_input(name_input):
     name_input = input(name_input)
     if name_input.lower() == "quit":
@@ -66,29 +64,51 @@ def get_calorie_count(selected_goals):
 
     match selected_goals:
             case('Standard',):
-                calorie_count = 2000
+                calorie_count = 650
+                protein_count = 27
+                fat_count = 20
                 print("Calorie Count: ", calorie_count)
+                print("Protein Count: ", protein_count)
+                print("Fat_Count: ", fat_count)                
             case('Low Calories',):
-                calorie_count = 1000
+                calorie_count = 400
+                protein_count = 22
+                fat_count = 15
                 print("Calorie Count: ", calorie_count)
-            case('High Calories',):
-                calorie_count = 3000
+                print("Protein Count: ", protein_count)
+                print("Fat_Count: ", fat_count)                
+            case('High Protein',):
+                calorie_count = 800
+                protein_count = 35
+                fat_count = 25
                 print("Calorie Count: ", calorie_count)
-            case('Custom',):
-                calorie_count = input("Please enter your desired calories: ")
-                if calorie_count.isdigit():
+                print("Protein Count: ", protein_count)
+                print("Fat_Count: ", fat_count)
+            case('Custom Macros',):
+                calorie_count = input("Please enter your desired calories(kcal): ")
+                protein_count = input("Please enter your desired protein(g):")
+                fat_count = input("Please enter your desired fats(g): ")
+                if calorie_count.isdigit() and protein_count.isdigit() and fat_count.isdigit:
                     calorie_count = int(calorie_count)
-                    print("Your selected calorie is: ", calorie_count)
+                    protein_count = int(protein_count)
+                    fat_count = int(fat_count)
+                    print(f"Your selected goals are: ", {calorie_count}, {protein_count}, {fat_count})
                 else:
                     print("Goal not defined. Standard will be chosen")
-                    calorie_count = 2000
+                    calorie_count = 550
+                    protein_count = 27
+                    fat_count = 20
             case('None',):
                 print("Since you have not selected a calorie goal, Standard will be chosen")
-                calorie_count = 2000                
+                calorie_count = 550    
+                protein_count = 27
+                fat_count = 20          
             case _:
                 print("Goal not defined. Standard will be chosen")
-                calorie_count = 2000
-    return calorie_count
+                calorie_count = 550
+                protein_count = 27
+                fat_count = 20
+    return calorie_count, protein_count, fat_count
 
 #Cuisine
 def open_cuisine_menu():
@@ -102,7 +122,7 @@ def open_cuisine_menu():
 
 # Selection Menu
 RESTRICTIONS = ("Seafood", "Nuts", "Dairy", "Wheat", "Eggs", "Halal")
-GOALS = ("Standard", "Low Calories", "High Calories", "Custom")
+GOALS = ("Standard", "Low Calories", "High Protein", "Custom Macros")
 CUISINE = ("Anything", "Chinese", "Malay", "Indian", "Japanese", "Thai",
            "Korean", "Vietnamese", "Italian", "Mexican", "Western")
 
@@ -141,12 +161,23 @@ def prompt_menu(title, options, multiple):
 # country/currency,
 def get_country_input(country_input):
     country_input = input(country_input)
-    try:
-        pycountry.countries.search_fuzzy(country_input)
-        return country_input
-    except:
-        print("Error, country not found. Please enter a valid country.")
+    if country_input.isdigit():
+        print("Error, invalid. Please enter a valid country.")
         return "country_error"
+    else:
+        try:
+            country_validation =  (pycountry.countries.get(name=country_input)
+                                    or pycountry.countries.get(official_name=country_input)
+                                    or pycountry.countries.get(alpha_2=country_input.upper())
+                                    or pycountry.countries.get(alpha_3=country_input.upper()))
+            if country_validation:
+                return country_validation.name
+            else:
+                print("Error, invalid. Please enter a valid country.")
+                return "country_error"
+        except LookupError:
+            print("Error, country not found. Please enter a valid country.")
+            return "country_error"
 
 def main_input():
     while True:
@@ -170,12 +201,12 @@ def main_input():
                 break
 
         selected_restrictions = open_restrictions_menu()
+        
+        selected_cuisine = open_cuisine_menu()
 
         selected_goals = open_goal_menu()
 
-        calorie_count = get_calorie_count(selected_goals)
-
-        selected_cuisine = open_cuisine_menu()
+        calorie_count, protein_count, fat_count = get_calorie_count(selected_goals)
 
         while True:
             country_input = get_country_input("\nEnter country: ")
@@ -183,7 +214,7 @@ def main_input():
                 print("Selected Country: ", country_input)
                 break
 
-        combined_input = [name_input, budget_input, pax_input, selected_restrictions, selected_goals, calorie_count, selected_cuisine, country_input]
+        combined_input = [name_input, budget_input, pax_input, selected_restrictions, selected_goals, calorie_count, selected_cuisine, country_input, protein_count, fat_count]
         all_input = (combined_input)
 
         print("         MEAL PLANNER PROFILE SEARCH        ")
@@ -192,11 +223,14 @@ def main_input():
         print(f"Total Budget: ${budget_input:.2f}")
         print(f"Number of Pax: {pax_input}")
         print(f"Dietary Restrictions: {selected_restrictions}")
+        print(f"Cuisine: {selected_cuisine}")
         print(f"Dietary Goal: {selected_goals}")
         print(f"Calories: {calorie_count} kcal")
-        print(f"Cuisine: {selected_cuisine}")
+        print(f"Protein: {protein_count} g")
+        print(f"Fats: {fat_count} g")
         print(f"Target Country: {country_input}")
         print("="*40)
+        print(all_input)
         return all_input
 
 def main_menu():

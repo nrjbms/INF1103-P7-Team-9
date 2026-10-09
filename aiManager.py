@@ -4,16 +4,16 @@
 
 from google import genai
 from dotenv import load_dotenv
-import threading
+from google.genai import types
 
 load_dotenv()
 
 # Initialize the client (reads GEMINI_API_KEY automatically from environment)
-client = genai.Client()
+# Also adds a timer incase the AI takes too long to return an object
+client = genai.Client(
+    http_options=types.HttpOptions(timeout=15000)
+)
 
-#timer function
-def time_out():
-    return True
 
 #craft the prompt to be fed into the Gemini API Call
 def craftprompt(pax, total_grocery_cost, country,exclusion):
@@ -47,33 +47,24 @@ def craftprompt(pax, total_grocery_cost, country,exclusion):
 
 #Gemini API Call
 def GeminiAPI(prompt):
-    #Timer incase response taking too long to load
-    timer= threading.Timer(1, time_out)
-    timer.start()
-
     try:
         #API Call to gemini 3.8 flash
         response = client.models.generate_content(
             model="gemini-3.8-flash",
             contents=prompt,
-            config={
-                "response_mime_type": "application/json"
-        }
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json"
+            )
         )
-
-        #If prompt takes too long to load, automatically stop
-        if timer == True:
-            return "Prompt took too long"
         
         #Response generated
         if response:
-            timer.cancel()
             return response.text
 
     #Error Handling from API    
     except (ValueError, AttributeError, Exception) as e:
-        timer.cancel()            
-        return f"An error has occurred: \n\n{str(e)}"
+        error_msg = getattr(e, "message", str(e))    
+        return f"An error has occurred: {error_msg}\n"
 
 
 #Hardcoded Sample API Call Output
