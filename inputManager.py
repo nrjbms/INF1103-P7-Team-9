@@ -88,6 +88,7 @@ def get_calorie_count(selected_goals):
                 calorie_count = input("Please enter your desired calories(kcal): ")
                 protein_count = input("Please enter your desired protein(g):")
                 fat_count = input("Please enter your desired fats(g): ")
+
                 if calorie_count.isdigit() and protein_count.isdigit() and fat_count.isdigit:
                     calorie_count = int(calorie_count)
                     protein_count = int(protein_count)
@@ -230,7 +231,6 @@ def main_input():
         print(f"Fats: {fat_count} g")
         print(f"Target Country: {country_input}")
         print("="*40)
-        print(all_input)
         return all_input
 
 def main_menu():
@@ -398,19 +398,7 @@ def get_accept_reject_menu(plan, dish_selection_prompt, user_input, dataManager)
     dish_selection = input(dish_selection_prompt).strip().lower()
 
     if dish_selection == 'y':
-        try:
-            selected_dish_idx = int(input("Enter the number of the dish to view its recipe: "))
-            if 1 <= selected_dish_idx <= len(dishes):
-                dish = dishes[selected_dish_idx - 1]
-                print(f"\n--- Recipe for {dish.get('dish_name')} ---")
-                print(f"Ingredients: {dish.get('ingredients', 'Ingredients not found')}")
-                print(f"Recipe\n======= \n{dish.get('recipe', 'Recipe not available.')}")
-            else:
-                print("Invalid dish number.")
-        except ValueError:
-            print("Please enter a valid number.")
 
-        # Save the entire plan (grocery list, total cost, all dishes)
         plan_to_save = {key: plan[key] for key in PLAN_KEYS if key in plan}
         saved_successfully = dataManager.save_record(user_input, plan_to_save)
 
@@ -418,6 +406,21 @@ def get_accept_reject_menu(plan, dish_selection_prompt, user_input, dataManager)
             print("Record saved successfully!")
         else:
             print("Warning: Failed to save the record data.")
+
+        try:
+            selected_dish_idx = int(input("Enter the number of the dish to view its recipe: "))
+            if 1 <= selected_dish_idx <= len(dishes):
+                dish = dishes[selected_dish_idx - 1]
+                print(f"\n--- Recipe for {dish.get('dish_name')} ---")
+                print(f"Ingredients: {dish.get('ingredients', 'Ingredients not found')}")
+                instructions = re.split(r"(?=\d+\.\s)", dish["recipe"])
+                for instruction in instructions:
+                    if instruction.strip():
+                        print(instruction.strip())
+            else:
+                print("Invalid dish number.")
+        except ValueError:
+            print("Please enter a valid number.")
 
         print("Thank you for using our service.")
         return 'y', plan_to_save, dishes
