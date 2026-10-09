@@ -5,15 +5,15 @@
 from google import genai
 from dotenv import load_dotenv
 from google.genai import types
+from pathlib import Path
+import os
 
-load_dotenv()
 
-# Initialize the client (reads GEMINI_API_KEY automatically from environment)
-# Also adds a timer incase the AI takes too long to return an object
-client = genai.Client(
-    http_options=types.HttpOptions(timeout=15000)
-)
+env_path = Path(__file__).resolve().parent / ".env"
 
+#checks for env file
+def checkENV():
+    return env_path.exists()
 
 #craft the prompt to be fed into the Gemini API Call
 def craftprompt(pax, total_grocery_cost, country,exclusion):
@@ -47,24 +47,34 @@ def craftprompt(pax, total_grocery_cost, country,exclusion):
 
 #Gemini API Call
 def GeminiAPI(prompt):
-    try:
-        #API Call to gemini 3.8 flash
-        response = client.models.generate_content(
-            model="gemini-3.8-flash",
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json"
-            )
+    isENV = checkENV()
+    if (isENV == True):
+        load_dotenv()
+        # Initialize the client (reads GEMINI_API_KEY automatically from environment)
+        # Also adds a timer incase the AI takes too long to return an object
+        client = genai.Client(
+            http_options=types.HttpOptions(timeout=15000)
         )
-        
-        #Response generated
-        if response:
-            return response.text
+        try:
+            #API Call to gemini 3.8 flash
+            response = client.models.generate_content(
+                model="gemini-3.8-flash",
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json"
+                )
+            )
+            
+            #Response generated
+            if response:
+                return response.text
 
-    #Error Handling from API    
-    except (ValueError, AttributeError, Exception) as e:
-        error_msg = getattr(e, "message", str(e))    
-        return f"An error has occurred: {error_msg}\n"
+        #Error Handling from API    
+        except (ValueError, AttributeError, Exception) as e:
+            error_msg = getattr(e, "message", str(e))    
+            return f"{error_msg}\n"
+    else:
+        return "\nerror: env file is missing !"
 
 
 #Hardcoded Sample API Call Output
