@@ -4,7 +4,6 @@
 
 from google import genai
 from dotenv import load_dotenv
-import threading
 from google.genai import types
 
 load_dotenv()
@@ -12,7 +11,7 @@ load_dotenv()
 # Initialize the client (reads GEMINI_API_KEY automatically from environment)
 # Also adds a timer incase the AI takes too long to return an object
 client = genai.Client(
-    http_options=types.HttpOptions(timeout=20000)
+    http_options=types.HttpOptions(timeout=15000)
 )
 
 
