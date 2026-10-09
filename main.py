@@ -58,7 +58,7 @@ while True:
                     break 
                 elif response == 'n': 
                     prompt = aiManager.craftprompt( user_input[2], user_input[1], user_input[6], exclude ) 
-                    ai_output = aiManager.HCodeGeminiAPI(prompt) 
+                    ai_output = aiManager.GeminiAPI(prompt) 
                         
                     if "error" in ai_output: 
                         print("Error found:", ai_output) 
