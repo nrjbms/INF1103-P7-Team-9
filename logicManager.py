@@ -1,6 +1,8 @@
 import json
 
 # Default limits for the meal goals
+CALORIE_TOLERANCE = 0.10         # allow dishes to be 10% over/under the per-meal target
+NO_ERROR_VALUES = ("", "none", "null", "n/a", "na", "nil", "no error", "false")
 LOW_CALORIE_MAX = 500            # calorie cap for "Low Calorie"
 HIGH_PROTEIN_MIN = 30            # protein floor (g) for "High Protein"
 HIGH_PROTEIN_MIN_RATIO = 0.25    # protein must supply >= 25% of calories
@@ -94,20 +96,27 @@ def filter_dishes_by_dietary_rules(ai_dishes, dietary_restrictions):
 # Macro & Nutritional Rules (Multi-Condition Rule)
 def filter_dishes_by_nutrition(ai_dishes, meal_goal, target_cal=None,
                                target_protein=None, target_fat=None):
-    # Work out the limits from the meal goal (None = no limit)
-    max_cal = target_cal
+    # target_cal is the per-meal calorie target from the user    
+    max_cal = None
     min_protein = target_protein
     max_fat = target_fat
     min_ratio = None
 
-    if meal_goal is not None:
-        goal = str(meal_goal).strip().lower()
-        if goal == "low calorie" and max_cal is None:
-            max_cal = LOW_CALORIE_MAX
-        elif goal == "high protein":
-            if min_protein is None:
-                min_protein = HIGH_PROTEIN_MIN
-            min_ratio = HIGH_PROTEIN_MIN_RATIO
+    # Accept "Low Calorie", ("Low Calorie",), "low calories", etc.
+    if isinstance(meal_goal, (tuple, list)):
+        meal_goal = meal_goal[0] if meal_goal else None
+    goal = str(meal_goal).strip().lower() if meal_goal is not None else "none"
+
+    if goal in ("low calorie", "low calories"):
+        cap = target_cal if target_cal is not None else LOW_CALORIE_MAX
+        max_cal = cap * (1 + CALORIE_TOLERANCE)
+    elif goal == "high protein":
+        if min_protein is None:
+            min_protein = HIGH_PROTEIN_MIN
+        min_ratio = HIGH_PROTEIN_MIN_RATIO
+    elif target_cal is not None:
+        # "Standard" or "Custom": don't go over the per-meal target
+        max_cal = target_cal * (1 + CALORIE_TOLERANCE)
 
     valid_dishes = []
     flagged_dishes = []
@@ -266,8 +275,8 @@ def process_ai_response(ai_output, user_input):
     if not isinstance(ai_output, dict) or not isinstance(user_input, dict):
         plan["Error"] = "Invalid data passed to the logic manager"
  
-    elif ai_output.get("Error"):
-        plan["Error"] = ai_output["Error"]
+    elif str(ai_output.get("Error") or "").strip().lower() not in NO_ERROR_VALUES:
+        plan["Error"] = str(ai_output["Error"]).strip()
  
     elif not isinstance(ai_output.get("Dishes"), list) or len(ai_output["Dishes"]) == 0:
         plan["Error"] = "The AI returned no dishes"
@@ -324,6 +333,10 @@ def process_ai_response(ai_output, user_input):
             plan["outcome"] = "ACCEPTED"
         else:
             plan["outcome"] = "FLAGGED"
+            plan["warnings"].append(
+                f"Only {len(valid_dishes)} of {len(dishes)} suggested dishes met your "
+                "requirements. You may want to regenerate for more options"
+            )
     return plan
 
 def build_user_input_dict(user_input):
@@ -331,11 +344,15 @@ def build_user_input_dict(user_input):
     if isinstance(goal, (tuple, list)):        # ('Standard',) → 'Standard'
         goal = goal[0] if goal else None
 
+    per_meal_cal = parse_number(user_input[5]) if len(user_input) > 5 else None
+    if per_meal_cal is not None and per_meal_cal <= 0:
+        per_meal_cal = None
+
     return {
         "Total_budget": user_input[1],
         "Dietary_restrictions": user_input[3],
         "Meal_goal": goal,
-        "Calorie_count_per_meal_input": None,   # see note below
+        "Calorie_count_per_meal_input": per_meal_cal,
         "Protein_per_meal_input": None,
         "Fats_per_meal": None,
         "Cuisine": user_input[6],
