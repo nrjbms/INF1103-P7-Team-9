@@ -20,15 +20,18 @@ def get_name_input(name_input):
 # budget,
 def get_budget_input(budget_input):
     budget_input = input(budget_input)
-    try:
-        budget_input = float(budget_input)
-        if budget_input <= 9.9:
-            print("It will be difficult to suggest meal plans with such a small budge. Please allocate more budget and try again.")
+    if budget_input.isdigit():
+        try:
+            budget_input = float(budget_input)
+            if budget_input <= 9.9:
+                print("It will be difficult to suggest meal plans with such a small budge. Please allocate more budget and try again.")
+                return
+            else:
+                return budget_input
+        except:
+            print("Error. Please enter a valid number")
             return
-        else:
-            return budget_input
-    except:
-        print("Error. Please enter a valid number")
+    else:
         return
 
 # pax per,
@@ -89,7 +92,7 @@ def get_calorie_count(selected_goals):
                 protein_count = input("Please enter your desired protein(g):")
                 fat_count = input("Please enter your desired fats(g): ")
 
-                if calorie_count.isdigit() and protein_count.isdigit() and fat_count.isdigit:
+                if calorie_count.isdigit() and protein_count.isdigit() and fat_count.isdigit():
                     calorie_count = int(calorie_count)
                     protein_count = int(protein_count)
                     fat_count = int(fat_count)
