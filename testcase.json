@@ -1,3 +1,89 @@
-[{"Test Case Name": "AI Manager: Invalid Pax","Inputs": ["s",10,"Singapore",""], "Expected_Output": "!! Please key in Pax as a valid number"},
-{"Test Case Name": "AI Manager: Invalid Budget","Inputs": [1,"s","Singapore",""], "Expected_Output": "!! Please key in Total grocery Cost as a valid number"}
+[
+    {
+        "Test Case Name": "AI Manager: Invalid Pax",
+        "Inputs": [
+            "s",
+            10,
+            "Singapore",
+            ""
+        ],
+        "Expected_Output": "!! Please key in Pax as a valid number"
+    },
+    {
+        "Test Case Name": "AI Manager: Invalid Budget",
+        "Inputs": [
+            1,
+            "s",
+            "Singapore",
+            ""
+        ],
+        "Expected_Output": "!! Please key in Total grocery Cost as a valid number"
+    },
+    {
+        "Test Case Name": "Meal Planner: Exit Program",
+        "Inputs": [
+            "3"
+        ],
+        "Expected_Output": "Goodbye!"
+    },
+    {
+        "Test Case Name": "Meal Planner: Invalid Menu Choice",
+        "Inputs": [
+            "s",
+            "3"
+        ],
+        "Expected_Output": "Goodbye!"
+    },
+    {
+        "Test Case Name": "Meal Planner: View Saved Plans",
+        "Inputs": [
+            "2",
+            "b",
+            "3"
+        ],
+        "Expected_Output": "Saved Meal Plans"
+    },
+    {
+        "Test Case Name": "Meal Planner: Invalid Budget",
+        "Inputs": [
+            "1",
+            "Jannah",
+            "abc",
+            "50",
+            "1",
+            "",
+            "1",
+            "",
+            "1",
+            "Singapore",
+            "3"
+        ],
+        "Expected_Output": "Please enter a valid budget"
+    },
+    {
+        "Test Case Name": "Meal Planner: Invalid Pax",
+        "Inputs": [
+            "1",
+            "Jannah",
+            "50",
+            "abc",
+            "1",
+            "",
+            "1",
+            "",
+            "1",
+            "Singapore",
+            "3"
+        ],
+        "Expected_Output": "Please enter a valid number"
+    },
+    {
+        "Test Case Name": "Meal Planner: Return to Main Menu",
+        "Inputs": [
+            "2",
+            "b",
+            "3"
+        ],
+        "Expected_Output": "Goodbye!"
+    }
 ]

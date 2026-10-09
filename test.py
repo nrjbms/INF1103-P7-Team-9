@@ -3,6 +3,7 @@ import dataManager
 import inputManager
 import logicManager
 
+inputManager.welcome_msg()
 
 while True:
 

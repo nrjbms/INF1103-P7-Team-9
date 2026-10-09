@@ -4,6 +4,13 @@ import json
 import re
 import dataManager
 
+
+def welcome_msg():
+    print("=" *50)
+    print("Welcome to JustEat!")
+    print("Budget Meal Planner")
+    print("=" *50)
+
 # name,
 def get_name_input(name_input):
     name_input = input(name_input)
