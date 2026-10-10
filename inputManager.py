@@ -254,29 +254,27 @@ def main_input():
         return all_input
 
 def main_menu():
-    while True:
         print("\nMain Menu")
         print("-" * 30)
-        print("1. Generate New Meal Plan\n2. View Saved Plans and Recipes\n3. Exit")
-        print("-" * 30)
+        print("1. Generate Meal Plan\n2. View Saved Meal Plans\n2. View Saved Meal Plans\n3. Change Meal Plan Name\n4. Exit")
 
-        choice = input("\nPlease select an option (1-3): ")
-        print()
-        
-        if choice.isdigit() and 1 <= int(choice) <= 3:
+        choice = input("\nPlease select an option (1-4): ")
+
+        if choice.isdigit() and 1 <= int(choice) <= 4:
             return int(choice)
 
-        print("Invalid choice. Please try again.")
+        print("Invalid choice. Please select 1-4.")
+        return None
 
 
-# Display the newly generated AI meal plan
+
 def display_generated_meal_plan(user_input, ai_output):
 
     print()
     print(f"Meal Plan for {user_input[0]}")
     print("-" * 30)
 
-    # User input
+
     print(f"\nBudget: ${user_input[1]:.2f}")
     print(f"Pax: {user_input[2]}")
     print(f"Dietary Restrictions: {user_input[3]}")
@@ -288,7 +286,7 @@ def display_generated_meal_plan(user_input, ai_output):
     print(f"Country: {user_input[7]}")
    
 
-    # AI output
+
     print(f"\nTotal Grocery Cost: ${ai_output['Total_grocery_cost']:.2f}")
 
     print("\nIngredient List:")
@@ -310,7 +308,7 @@ def display_generated_meal_plan(user_input, ai_output):
         )
 
 
-# Display a saved meal plan from the final JSON file
+
 def display_meal_plan(plan):
 
     print()
@@ -360,7 +358,7 @@ def get_selected_plan(meal_plans):
 
     while True:
         choice = input(
-            "\nEnter the ID of the meal plan you want to view "
+            "\nEnter the ID of the meal plan you want to edit/view "
             "(or 'back' to return to the main menu): "
         )
 
@@ -475,6 +473,20 @@ def ask_regenerate():
             return False
         else:
             print("Invalid input. Please enter Yes or No.")
+
+
+def change_meal_plan_name(plan):
+    print("\nChange Meal Plan Name")
+    print("-" * 30)
+    print(f"Current name: {plan.get('name', 'N/A')}")
+
+    while True:
+        new_name = input("\nEnter the new name: ").strip()
+
+        if new_name:
+            return new_name
+        else:
+            print("Name cannot be empty. Please try again.")
 
 
 PLAN_KEYS = ("pax", "Total_grocery_cost", "Grocery_list", "Dishes")
