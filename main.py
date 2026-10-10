@@ -31,40 +31,44 @@ while True:
             if "error" in ai_output:
                 print("Error found:", ai_output)
 
-                again = input("Do you want to regenerate? (Yes/No): ")
-
-                if again.lower() == "yes":
+                if inputManager.ask_regenerate():
                     continue
                 else:
                     break
 
-            plan = logicManager.get_filtered_plan(ai_output, user_input)
+            plan = logicManager.get_filtered_plan(
+                ai_output,
+                user_input
+            )
 
             if plan is None:
-                again = input("Do you want to regenerate? (Yes/No): ")
-
-                if again.lower() == "yes":
+                if inputManager.ask_regenerate():
                     continue
                 else:
                     break
 
             while True:
-                inputManager.display_generated_meal_plan(user_input, plan)
-
-                response, plan_to_save, exclude = inputManager.get_accept_reject_menu(
-                    plan,
-                    "Accept? (y/n): ",
+                inputManager.display_generated_meal_plan(
                     user_input,
-                    dataManager
+                    plan
+                )
+
+                response, plan_to_save, exclude = (
+                    inputManager.get_accept_reject_menu(
+                        plan,
+                        "Accept? (y/n): ",
+                        user_input,
+                        dataManager
+                    )
                 )
 
                 if response == 'y':
                     break
 
                 elif response == 'n':
-                    again = input("Do you want to regenerate? (Yes/No): ")
+                    regenerate = inputManager.ask_regenerate()
 
-                    if again.lower() == "yes":
+                    if regenerate:
                         break
                     else:
                         exclude = None
@@ -75,23 +79,66 @@ while True:
 
             if response == 'y':
                 break
-            elif response == 'n' and again.lower() == "yes":
+
+            elif response == 'n' and regenerate:
                 continue
+
             else:
                 break
 
     elif choice == 2:
-        plans = "meal_history.json"
+        while True:
+            saved_choice = inputManager.saved_plans_menu()
 
-        inputManager.display_all_plans(plans)
+            if saved_choice is None:
+                continue
 
-        selected_plan = inputManager.get_selected_plan(plans)
+            if saved_choice == 4:
+                break
 
-        if selected_plan is None:
-            continue
+            if saved_choice == 1:
+                plans = "meal_history.json"
 
-        inputManager.display_meal_plan(selected_plan)
-        inputManager.get_selected_recipe(selected_plan)
+                inputManager.display_all_plans(plans)
+
+                selected_plan = inputManager.get_selected_plan(plans)
+
+                if selected_plan is None:
+                    continue
+
+                inputManager.display_meal_plan(selected_plan)
+                inputManager.get_selected_recipe(selected_plan)
+                continue
+
+            elif saved_choice == 2:
+                name = input("\nEnter the name to search for: ")
+                filtered_plans = dataManager.filter_by_name(name)
+
+            elif saved_choice == 3:
+                try:
+                    budget = float(
+                        input("\nEnter the budget to filter by: ")
+                    )
+
+                    filtered_plans = dataManager.filter_by_budget(
+                        budget
+                    )
+
+                except ValueError:
+                    print("Invalid budget. Please enter a number.")
+                    continue
+
+            inputManager.display_filtered_plans(filtered_plans)
+
+            selected_plan = inputManager.get_selected_filtered_plan(
+                filtered_plans
+            )
+
+            if selected_plan is None:
+                continue
+
+            inputManager.display_meal_plan(selected_plan)
+            inputManager.get_selected_recipe(selected_plan)
 
     else:  # choice == 3
         print("Goodbye!")

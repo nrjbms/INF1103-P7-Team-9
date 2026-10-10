@@ -5,6 +5,7 @@ import dataManager
 
 
 def welcome_msg():
+    print()
     print("=" *50)
     print("Welcome to JustEat!")
     print("Budget Meal Planner")
@@ -276,13 +277,16 @@ def display_generated_meal_plan(user_input, ai_output):
     print("-" * 30)
 
     # User input
-    print(f"Budget: ${user_input[1]:.2f}")
+    print(f"\nBudget: ${user_input[1]:.2f}")
     print(f"Pax: {user_input[2]}")
     print(f"Dietary Restrictions: {user_input[3]}")
     print(f"Dietary Goal: {user_input[4]}")
     print(f"Calories: {user_input[5]} kcal")
+    print(f"Protein: {user_input[8]} g")
+    print(f"Fats: {user_input[9]} g")
     print(f"Cuisine: {user_input[6]}")
     print(f"Country: {user_input[7]}")
+   
 
     # AI output
     print(f"\nTotal Grocery Cost: ${ai_output['Total_grocery_cost']:.2f}")
@@ -343,10 +347,10 @@ def display_all_plans(meal_plans):
 
         for plan in plans:
             print(
-                f"{plan['id']}: Meal Plan for {plan['name']} "
-                f"({plan['pax']} pax) - "
-                f"${plan['Total_grocery_cost']:.2f} "
-                f"[{plan['date']}]"
+                f"{plan.get('id', 'N/A')}: Meal Plan for {plan.get('name', 'N/A')} "
+                f"({plan.get('pax', 'N/A')} pax) - "
+                f"${plan.get('Total_grocery_cost', 'N/A'):.2f} "
+                f"[{plan.get('date', 'N/A')}]"
             )
 
 
@@ -367,7 +371,7 @@ def get_selected_plan(meal_plans):
             choice = int(choice)
 
             for plan in plans:
-                if plan["id"] == choice:
+                if plan.get('id') == choice:
                     return plan
 
         print("Invalid input. Please enter a valid ID.")
@@ -405,6 +409,73 @@ def get_selected_recipe(plan):
             display_recipe_details(plan["Dishes"][int(choice) - 1])
         else:
             print("Invalid input. Please enter a valid number.")
+            
+def saved_plans_menu():
+    print("\nSaved Meal Plans")
+    print("-" * 50)
+    print("1. View All Plans")
+    print("2. Filter by Name")
+    print("3. Filter by Budget")
+    print("4. Back to Main Menu")
+
+    choice = input("\nPlease select an option (1-4): ")
+
+    if choice.isdigit() and 1 <= int(choice) <= 4:
+        return int(choice)
+
+    print("Invalid choice. Please select 1-4.")
+    return None
+
+
+def display_filtered_plans(filtered_plans):
+    print("\nFiltered Saved Meal Plans")
+    print("-" * 50)
+
+    if not filtered_plans:
+        print("No matching meal plans found.")
+        return
+
+    for plan in filtered_plans:
+        print(
+                f"{plan.get('id', 'N/A')}: Meal Plan for {plan.get('name', 'N/A')} "
+                f"({plan.get('pax', 'N/A')} pax) - "
+                f"${plan.get('Total_grocery_cost', 'N/A'):.2f} "
+                f"[{plan.get('date', 'N/A')}]"
+            )
+       
+
+def get_selected_filtered_plan(filtered_plans):
+    if not filtered_plans:
+        print("No meal plans available to select.")
+        return None
+
+    while True:
+        choice = input(
+            "Enter the ID of the meal plan to view, or 'back' to go back: "
+        )
+
+        if choice.lower() == "back":
+            return None
+
+        for plan in filtered_plans:
+            if str(plan.get("id")) == choice:
+                return plan
+
+        print("Invalid ID. Please select a plan from the displayed results.")
+
+
+def ask_regenerate():
+    while True:
+        again = input("Do you want to regenerate? (Yes/No): ")
+        again = again.strip().lower()
+
+        if again == "yes":
+            return True
+        elif again == "no":
+            return False
+        else:
+            print("Invalid input. Please enter Yes or No.")
+
 
 PLAN_KEYS = ("pax", "Total_grocery_cost", "Grocery_list", "Dishes")
 
