@@ -1,5 +1,5 @@
 #Run these in terminal
-
+#pip install google-genai python-dotenv
 #Done by Chong Li Heng 2603072
 
 from google import genai

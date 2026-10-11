@@ -8,7 +8,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.platypus import Table,Paragraph, SimpleDocTemplate, Spacer, PageBreak
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-import inputManager
+import re
 
 #definitions    
 #contents of the PDF will be stored in this array
@@ -34,6 +34,7 @@ standard_font = ParagraphStyle(
     fontSize=11
 )
 standard_space = story.append(Spacer(1,10))
+invalid_filename = r'[<>:"/\\|?*]'
 story = []
 
 # creates the front page header
@@ -72,8 +73,15 @@ def styling(canvas, doc):
 def makepdf(plan):
     #sets the file name
     fileName = input("What would you like to name the file: ")
-    fileName = f"{fileName}.pdf"    
-    doc = SimpleDocTemplate(fileName,pagesize=A4)
+    validName = False
+    while(validName == False):
+        if re.search(invalid_filename, fileName):
+            print("\nInvalid file name !")
+            fileName = input("What would you like to name the file: ")
+        else:
+            validName = True
+            fileName = f"{fileName}.pdf"    
+            doc = SimpleDocTemplate(fileName,pagesize=A4)
 
 
     #creates a space after the header
