@@ -2,7 +2,7 @@ import pycountry
 import json
 import re
 import dataManager
-
+import pdfmaker
 
 def welcome_msg():
     print()
@@ -398,10 +398,13 @@ def get_selected_recipe(plan):
     while True:
         choice = input(
             "\nEnter the number of the recipe you want to view "
-            "(or 'back' to return to the meal plan): "
+            "(or 'print' to print the entire grocery list or 'back' to return to the meal plan): "
         )
 
         if choice.lower() == "back":
+            return False
+        elif choice.lower() == "print":
+            pdfmaker.makepdf(plan)
             return False
         if choice.isdigit() and 1 <= int(choice) <= len(plan["Dishes"]):
             display_recipe_details(plan["Dishes"][int(choice) - 1])

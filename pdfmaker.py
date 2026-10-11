@@ -69,8 +69,9 @@ def styling(canvas, doc):
 
 
 #This function will create the PDF
-def makepdf(fileName, plan):
+def makepdf(plan):
     #sets the file name
+    fileName = input("What would you like to name the file: ")
     fileName = f"{fileName}.pdf"    
     doc = SimpleDocTemplate(fileName,pagesize=A4)
 
@@ -174,3 +175,6 @@ def makepdf(fileName, plan):
 
     #builds the pdf "onFirstPage" creates the header "Budget Planner"
     doc.build(story, onFirstPage=styling)
+    if os.path.exists(fileName):
+        print("\nPDF File has been made !")
+        return False
