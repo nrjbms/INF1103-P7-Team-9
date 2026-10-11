@@ -435,22 +435,8 @@ def build_user_input_dict(user_input):
         "Cuisine": get(6),
     }
 
-
 def get_filtered_plan(ai_output, user_input):
     if isinstance(user_input, (list, tuple)):
         user_input = build_user_input_dict(user_input)
 
-    plan = process_ai_response(ai_output, user_input)
-
-    # Explain every dish that was removed (dietary, nutrition and cuisine rules)
-    for flagged in plan["flagged_dishes"]:
-        print(f"Removed '{flagged['dish_name']}': {flagged['reason']}")
-
-    if plan["outcome"] == "REJECTED":
-        print("Plan rejected:", plan["Error"])
-        return None
-
-    for w in plan["warnings"]:
-        print("Warning:", w)
-
-    return plan
+    return process_ai_response(ai_output, user_input)

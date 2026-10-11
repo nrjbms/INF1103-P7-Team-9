@@ -601,3 +601,15 @@ def get_accept_reject_menu(plan, dish_selection_prompt, user_input, dataManager)
 
         else:
             print("Error. Please select y/n.")
+
+# Show the logic manager's results: removed dishes, rejection reason and warnings (brandon)
+def display_plan_messages(plan):
+    for flagged in plan.get("flagged_dishes", []):
+        print(f"Removed '{flagged['dish_name']}': {flagged['reason']}")
+
+    if plan.get("outcome") == "REJECTED":
+        print("Plan rejected:", plan.get("Error", "Unknown reason"))
+        return
+
+    for warning in plan.get("warnings", []):
+        print("Warning:", warning)

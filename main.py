@@ -35,7 +35,9 @@ while True:
 
             plan = logicManager.get_filtered_plan(ai_output, user_input)
 
-            if plan is None:
+            inputManager.display_plan_messages(plan)
+
+            if plan["outcome"] == "REJECTED":
                 print("Unable to generate a valid meal plan.")
 
                 if inputManager.ask_regenerate():
