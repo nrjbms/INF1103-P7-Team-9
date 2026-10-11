@@ -260,7 +260,7 @@ def main_menu():
 
         choice = input("\nPlease select an option (1-4): ")
 
-        if choice.isdigit() and 1 <= int(choice) <= 4:
+        if 1 <= int(choice) <= 4:
             return int(choice)
 
         print("Invalid choice. Please select 1-4.")
