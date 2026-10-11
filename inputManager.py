@@ -74,7 +74,7 @@ def get_calorie_count(selected_goals):
                 print("Protein Count: ", protein_count)
                 print("Fat_Count: ", fat_count)                
             case('Low Calories',):
-                calorie_count = 400
+                calorie_count = 500
                 protein_count = 22
                 fat_count = 15
                 print("Calorie Count: ", calorie_count)
