@@ -203,7 +203,10 @@ def get_country_input(country_input):
 def main_input():
     while True:
         
-        name_input = get_name_input("Enter name (Enter 'quit' to quit): ")
+        name_input = get_name_input("Enter name (Enter 'quit' to quit): ").strip()
+        if not name_input:
+            print("Name cannot be empty. Please try again.")
+            continue
         if name_input == "quit":
             break
         else:
