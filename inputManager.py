@@ -94,22 +94,32 @@ def get_calorie_count(selected_goals):
 
             case('Custom Macros',):
 
-                while True:
-                        calorie_count = input("Enter calorie goal(kcal): ")
-                        protein_count = input("Enter protein goal (g): ")
-                        fat_count = input("Enter fat goal (g): ")
-
-                        if calorie_count.isdigit() and protein_count.isdigit() and fat_count.isdigit():
-                            calorie_count = int(calorie_count)
-                            protein_count = int(protein_count)
-                            fat_count = int(fat_count)
-                            
-                            print(f"Calorie Count: {calorie_count}kcal")
-                            print(f"Protein Count: {protein_count}g")
-                            print(f"Fat_Count: {fat_count}g")
+                    while True:
+                        calorie_input = input("Enter calorie goal (kcal): ")
+                        if calorie_input.isdigit() and int(calorie_input) >= 350:
+                            calorie_count = int(calorie_input)
                             break
-                        else:
-                            print("Invalid input. Please try again.\n")
+                        print("Please have at least 350kcal to recieve sufficient nutrients.\n")
+
+                    while True:
+                        protein_input = input("Enter protein goal (g): ")
+                        if protein_input.isdigit() and int(protein_input) >= 20:
+                            protein_count = int(protein_input)
+                            break
+                        print("Please have at least 20g of protein to recieve sufficient nutrients.\n")
+
+                    while True:
+                        fat_input = input("Enter fat goal (g): ")
+                        if fat_input.isdigit() and int(fat_input) >= 10:
+                            fat_count = int(fat_input)
+                            break
+                        print("Please have at least 10g of fat to recieve sufficient nutrients.\n")
+
+                    # 4. Print final confirmed targets
+                    print(f"\n--- Goals Set ---")
+                    print(f"Calorie Count: {calorie_count}kcal")
+                    print(f"Protein Count: {protein_count}g")
+                    print(f"Fat Count: {fat_count}g")
 
             case('None',):
                 print("Since you have not selected a calorie goal, Standard will be chosen")
@@ -551,42 +561,43 @@ def get_accept_reject_menu(plan, dish_selection_prompt, user_input, dataManager)
 
     dishes = [dish for dish in plan.get("Dishes", []) if isinstance(dish, dict)]
 
-    dish_selection = input(dish_selection_prompt).strip().lower()
+    while True:
 
-    if dish_selection == 'y':
+        dish_selection = input(dish_selection_prompt).strip().lower()
 
-        plan_to_save = {key: plan[key] for key in PLAN_KEYS if key in plan}
-        saved_successfully = dataManager.save_record(user_input, plan_to_save)
+        if dish_selection == 'y':
 
-        if saved_successfully:
-            print("Record saved successfully!")
-        else:
-            print("Warning: Failed to save the record data.")
+            plan_to_save = {key: plan[key] for key in PLAN_KEYS if key in plan}
+            saved_successfully = dataManager.save_record(user_input, plan_to_save)
 
-        try:
-            selected_dish_idx = int(input("\nEnter the number of the dish to view its recipe: "))
-            if 1 <= selected_dish_idx <= len(dishes):
-                dish = dishes[selected_dish_idx - 1]
-                print(f"\n--- Recipe for {dish.get('dish_name')} ---")
-                print(f"Ingredients: {dish.get('ingredients', 'Ingredients not found')}")
-                instructions = re.split(r"(?=\d+\.\s)", dish["recipe"])
-                for instruction in instructions:
-                    if instruction.strip():
-                        print(instruction.strip())
+            if saved_successfully:
+                print("Record saved successfully!")
             else:
-                print("Invalid dish number.")
-        except ValueError:
-            print("Please enter a valid number.")
+                print("Warning: Failed to save the record data.")
 
-        print("Thank you for using our service.")
-        return 'y', plan_to_save, dishes
+            try:
+                selected_dish_idx = int(input("\nEnter the number of the dish to view its recipe: "))
+                if 1 <= selected_dish_idx <= len(dishes):
+                    dish = dishes[selected_dish_idx - 1]
+                    print(f"\n--- Recipe for {dish.get('dish_name')} ---")
+                    print(f"Ingredients: {dish.get('ingredients', 'Ingredients not found')}")
+                    instructions = re.split(r"(?=\d+\.\s)", dish["recipe"])
+                    for instruction in instructions:
+                        if instruction.strip():
+                            print(instruction.strip())
+                else:
+                    print("Invalid dish number.")
+            except ValueError:
+                print("Please enter a valid number.")
 
-    elif dish_selection == 'n':
-        print("We are sorry for the inconvenience.")
-        ingredient_exclude = input("What would you like excluded? ")
-        print("Excluded: ", ingredient_exclude)
-        return 'n', None, ingredient_exclude
+            print("Thank you for using our service.")
+            return 'y', plan_to_save, dishes
 
-    else:
-        print("Error. Please select y/n.")
-        return dish_selection, None, None
+        elif dish_selection == 'n':
+            print("We are sorry for the inconvenience.")
+            ingredient_exclude = input("What would you like excluded? ")
+            print("Excluded: ", ingredient_exclude)
+            return 'n', None, ingredient_exclude
+
+        else:
+            print("Error. Please select y/n.")
