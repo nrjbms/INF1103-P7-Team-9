@@ -9,6 +9,8 @@ NO_ERROR_VALUES = ("", "none", "null", "n/a", "na", "nil", "no error", "false")
 LOW_CALORIE_MAX = 500            # calorie cap for "Low Calorie"
 HIGH_PROTEIN_MIN = 30            # protein floor (g) for "High Protein"
 HIGH_PROTEIN_MIN_RATIO = 0.25    # protein must supply >= 25% of calories
+PROTEIN_KCAL_PER_GRAM = 4        # 1 g of protein = 4 kcal
+FAT_KCAL_PER_GRAM = 9            # 1 g of fat = 9 kcal
 
 def parse_number(value):
     if isinstance(value, (int, float)) and not isinstance(value, bool):
@@ -27,7 +29,24 @@ def parse_number(value):
         if number.strip(".") != "":
             return float(number)
     return None
-    
+
+# Reasonability check for Custom Macros targets.
+# Protein and fat contain calories, so together they cannot add up to more than the calorie goal.
+# Returns (True, "") if the targets are possible, or (False, message) if they are not.
+def check_macro_targets(calories, protein, fat):
+    calories = parse_number(calories)
+    protein = parse_number(protein)
+    fat = parse_number(fat)
+    if calories is None or protein is None or fat is None:
+        return True, ""     # a target is missing, so there is nothing to compare
+
+    macro_calories = protein * PROTEIN_KCAL_PER_GRAM + fat * FAT_KCAL_PER_GRAM
+    if macro_calories > calories:
+        return False, (f"Your protein ({protein:g}g) and fat ({fat:g}g) targets add up to "
+                       f"{macro_calories:g} kcal, which is more than your calorie goal of "
+                       f"{calories:g} kcal. Please lower protein or fat, or raise calories.")
+    return True, ""
+
 # Budget Rule
 def check_budget_compliance(total_grocery_cost, total_budget):
     total_grocery_cost = parse_number(total_grocery_cost)
@@ -173,7 +192,7 @@ def filter_dishes_by_nutrition(ai_dishes, meal_goal, target_cal=None,
                 reasons.append(f"Fat ({fat:g}g) exceeds target ({max_fat:g}g)")
             # Condition D: macro balance for the chosen goal
             if min_ratio is not None and calories > 0:
-                ratio = (protein * 4) / calories
+                ratio = (protein * PROTEIN_KCAL_PER_GRAM) / calories
                 if ratio < min_ratio:
                     reasons.append(f"Protein provides only {ratio:.0%} of calories "
                                 f"(goal needs {min_ratio:.0%})")
@@ -304,9 +323,23 @@ def process_ai_response(ai_output, user_input):
         "flagged_dishes": [],
     }
  
+    # Custom Macros: make sure the user's targets are actually possible
+    macro_ok, macro_error = True, ""
+    if isinstance(user_input, dict):
+        goal_name = str(user_input.get("Meal_goal") or "").strip().lower()
+        if goal_name in ("custom macros", "custom"):
+            macro_ok, macro_error = check_macro_targets(
+                user_input.get("Calorie_count_per_meal_input"),
+                user_input.get("Protein_per_meal_input"),
+                user_input.get("Fats_per_meal"),
+            )
+
     # Step 3: Check the data, then run the rules
     if not isinstance(ai_output, dict) or not isinstance(user_input, dict):
         plan["Error"] = "Invalid data passed to the logic manager"
+
+    elif not macro_ok:
+        plan["Error"] = macro_error
  
     elif str(ai_output.get("Error") or "").strip().lower() not in NO_ERROR_VALUES:
         plan["Error"] = str(ai_output["Error"]).strip()
