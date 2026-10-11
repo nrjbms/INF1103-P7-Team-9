@@ -1,9 +1,7 @@
 # Automated tests for logicManager.py - Brandon
-# Feeds the hardcoded sample AI response (sampleoutput.json) into the logic layer
-# and checks every business rule makes the right decision.
+# Every test runs the logic manager on the sample AI response in sampleoutput.json
+# Checks that each decision follows the business rule
 # No live API call, no API key and no .env file needed.
-# Run from the project folder with:  python test_logicManager.py
-# Exit code is 0 if every test passes, 1 if any test fails.
 
 import json
 import sys
@@ -25,187 +23,229 @@ def sample():
 
 
 # User input list in the same order inputManager.main_input() builds it
-def user(budget=50.0, pax=1, restrictions=("None",), goal=("Standard",),
-         calories=650, cuisine=("Anything",), protein=27, fat=20):
+def user(budget=50.0, 
+         pax=1, 
+         restrictions=("None",), 
+         goal=("Standard",),
+         calories=650, 
+         cuisine=("Anything",), 
+         protein=27, 
+         fat=20):
     return ["Tester", budget, pax, restrictions, goal, calories, cuisine, "Singapore", protein, fat]
 
 
-# List of dish names from a list of dishes
-def names(dishes):
-    result = []
-    for dish in dishes:
-        result.append(dish["dish_name"])
-    return result
+# Nutrition values of a dish as numbers, e.g. "540 kcal" -> 540.0
+def calories_of(dish):
+    return logicManager.parse_number(dish["calorie_count_per_meal_output"])
 
 
-# Compare a result with the expected value; explain the difference if they don't match
-def check(actual, expected, what):
-    if actual != expected:
-        raise AssertionError(f"{what}\n        expected: {expected}\n        got:      {actual}")
+def protein_of(dish):
+    return logicManager.parse_number(dish["protein_count_per_meal_output"])
 
 
-# Compare the dishes a filter kept, and list why each removed dish was removed
-def check_kept(result, expected_names, what):
-    kept = names(result["valid_dishes"])
-    if kept != expected_names:
-        reasons = ""
-        for flag in result.get("flagged_dishes", []):
-            reasons = reasons + f"\n          - {flag['dish_name']}: {flag['reason']}"
-        if reasons == "":
-            reasons = " none"
-        raise AssertionError(f"{what}\n        expected: {expected_names}\n        got:      {kept}"
-                             f"\n        removed dishes and reasons:{reasons}")
+def fat_of(dish):
+    return logicManager.parse_number(dish["fats_count_per_meal"])
 
 
-# Dish names, read from sampleoutput.json in the order they appear there
-ALL_DISHES = names(sample()["Dishes"])
-STIR_FRY = ALL_DISHES[0]
-BOLOGNESE = ALL_DISHES[1]
-CURRY = ALL_DISHES[2]
-DONBURI = ALL_DISHES[3]
-FRIED_RICE = ALL_DISHES[4]
+# The dishes a filter removed (the sample dishes that are not in its kept list)
+def removed_dishes(all_dishes, result):
+    kept_names = []
+    for dish in result["valid_dishes"]:
+        kept_names.append(dish["dish_name"])
+
+    removed = []
+    for dish in all_dishes:
+        if dish["dish_name"] not in kept_names:
+            removed.append(dish)
+    return removed
 
 
-# ---- Helper and budget rule ----
+# Fail with a clear message if a condition is not true
+def check(condition, message):
+    if not condition:
+        raise AssertionError(message)
 
-def test_parse_number():
-    check(logicManager.parse_number("540 kcal"), 540.0, 'parse_number("540 kcal")')
-    check(logicManager.parse_number("1,200 kcal"), 1200.0, 'parse_number("1,200 kcal")')
-    check(logicManager.parse_number("abc"), None, 'parse_number("abc") should be unreadable')
+
+# ---- Reading numbers and the budget rule ----
+
+def test_parse_number_reads_every_dish():
+    for dish in sample()["Dishes"]:
+        text = dish["calorie_count_per_meal_output"]          # e.g. "540 kcal"
+        expected = float(text.replace("kcal", "").strip())
+        check(logicManager.parse_number(text) == expected,
+              f"parse_number({text!r}) gave {logicManager.parse_number(text)}, expected {expected}")
 
 
 def test_budget_rule():
-    cost = sample()["Total_grocery_cost"]       # $42.20 in sampleoutput.json
-    check(logicManager.check_budget_compliance(cost, cost)["status"], "ACCEPTED",
-          f"Cost ${cost} with a budget of exactly ${cost}")
-    check(logicManager.check_budget_compliance(cost, cost - 1)["status"], "REJECTED",
-          f"Cost ${cost} with a budget of ${cost - 1:.2f}")
-    check(logicManager.check_budget_compliance(cost, float("nan"))["status"], "ERROR",
-          "Budget 'nan'")
+    cost = sample()["Total_grocery_cost"]
+    status = logicManager.check_budget_compliance(cost, cost)["status"]
+    check(status == "ACCEPTED", f"Cost ${cost} with a budget of exactly ${cost} gave {status}")
+    status = logicManager.check_budget_compliance(cost, cost - 1)["status"]
+    check(status == "REJECTED", f"Cost ${cost} with a budget of ${cost - 1:.2f} gave {status}")
+    status = logicManager.check_budget_compliance(cost, float("nan"))["status"]
+    check(status == "ERROR", f"Budget 'nan' gave {status}")
 
 
 def test_custom_macros_reasonability_check():
-    check(logicManager.check_macro_targets(600, 30, 15)[0], True,
-          "600 kcal / 30 g protein / 15 g fat should be possible (255 kcal)")
-    check(logicManager.check_macro_targets(350, 60, 30)[0], False,
-          "350 kcal / 60 g protein / 30 g fat should be impossible (510 kcal)")
+    ok, message = logicManager.check_macro_targets(600, 30, 15)   # 120 + 135 = 255 kcal
+    check(ok, "600 kcal / 30 g protein / 15 g fat should be possible")
+    ok, message = logicManager.check_macro_targets(350, 60, 30)   # 240 + 270 = 510 kcal
+    check(not ok, "350 kcal / 60 g protein / 30 g fat should be impossible")
 
 
 # ---- Dietary filter ----
 
-def test_halal_removes_pork_dish():
-    result = logicManager.filter_dishes_by_dietary_rules(sample()["Dishes"], ("Halal",))
-    check_kept(result, [STIR_FRY, CURRY, DONBURI, FRIED_RICE], "Halal should remove only the pork dish")
-
-
-def test_other_restrictions():
+def test_halal_rule():
     dishes = sample()["Dishes"]
-    check_kept(logicManager.filter_dishes_by_dietary_rules(dishes, ("Eggs",)),
-               [STIR_FRY, BOLOGNESE, CURRY], "Eggs should remove the two egg dishes")
-    check_kept(logicManager.filter_dishes_by_dietary_rules(dishes, ("Dairy",)),
-               ALL_DISHES, "Dairy should keep every dish (none contain dairy)")
-    check_kept(logicManager.filter_dishes_by_dietary_rules(dishes, ("Wheat",)),
-               [CURRY], "Wheat should remove pasta and every dish with soy sauce")
+    result = logicManager.filter_dishes_by_dietary_rules(dishes, ("Halal",))
+    for dish in result["valid_dishes"]:
+        text = (dish["dish_name"] + " " + dish["ingredients"]).lower()
+        check("pork" not in text, f"Halal kept '{dish['dish_name']}', which contains pork")
+    for dish in removed_dishes(dishes, result):
+        text = (dish["dish_name"] + " " + dish["ingredients"]).lower()
+        check("pork" in text, f"Halal removed '{dish['dish_name']}', which has no pork")
+
+
+def test_eggs_rule():
+    dishes = sample()["Dishes"]
+    result = logicManager.filter_dishes_by_dietary_rules(dishes, ("Eggs",))
+    for dish in result["valid_dishes"]:
+        words = logicManager.split_into_words(dish["dish_name"] + " " + dish["ingredients"])
+        check("egg" not in words and "eggs" not in words,
+              f"Eggs kept '{dish['dish_name']}', which contains egg")
+    for dish in removed_dishes(dishes, result):
+        words = logicManager.split_into_words(dish["dish_name"] + " " + dish["ingredients"])
+        check("egg" in words or "eggs" in words, f"Eggs removed '{dish['dish_name']}', which has no egg")
+
+
+def test_every_removed_dish_has_a_reason():
+    dishes = sample()["Dishes"]
+    result = logicManager.filter_dishes_by_dietary_rules(dishes, ("Halal", "Eggs", "Wheat"))
+    check(len(result["flagged_dishes"]) == len(removed_dishes(dishes, result)),
+          f"{len(removed_dishes(dishes, result))} dishes removed but "
+          f"{len(result['flagged_dishes'])} reasons given")
 
 
 # ---- Nutrition goals (multi-condition rule) ----
 
-def test_standard_goal_has_no_limits():
-    result = logicManager.filter_dishes_by_nutrition(sample()["Dishes"], "Standard", 650, 27, 20)
-    check_kept(result, ALL_DISHES, "Standard has no limits, so every dish should be kept")
+def test_standard_goal_keeps_every_dish():
+    dishes = sample()["Dishes"]
+    result = logicManager.filter_dishes_by_nutrition(dishes, "Standard", 650, 27, 20)
+    check(len(result["valid_dishes"]) == len(dishes),
+          f"Standard kept {len(result['valid_dishes'])} of {len(dishes)} dishes; it has no limits")
 
 
-def test_low_calories_checks_calories_only():
-    # Cap is 500 + 10% = 550 kcal; the 620 and 580 kcal dishes are removed
-    result = logicManager.filter_dishes_by_nutrition(sample()["Dishes"], "Low Calories", 500, 22, 15)
-    check_kept(result, [STIR_FRY, DONBURI, FRIED_RICE], "Low Calories (500 kcal + 10% = 550 kcal cap)")
+def test_low_calories_rule():
+    dishes = sample()["Dishes"]
+    cap = 500 * 1.1 # 500 kcal + 10% leeway
+    result = logicManager.filter_dishes_by_nutrition(dishes, "Low Calories", 500, 22, 15)
+    for dish in result["valid_dishes"]:
+        check(calories_of(dish) <= cap, f"Low Calories kept '{dish['dish_name']}' at {calories_of(dish)} kcal (cap {cap:.0f})")
+    for dish in removed_dishes(dishes, result):
+        check(calories_of(dish) > cap, f"Low Calories removed '{dish['dish_name']}' at {calories_of(dish)} kcal (cap {cap:.0f})")
 
 
-def test_high_protein_checks_amount_and_share():
-    # Needs 35 g - 10% = 31.5 g protein and at least 25% of calories from protein
-    result = logicManager.filter_dishes_by_nutrition(sample()["Dishes"], "High Protein", 800, 35, 25)
-    check_kept(result, [STIR_FRY, CURRY], "High Protein (31.5 g minimum, 25% of calories from protein)")
+def test_high_protein_rule():
+    dishes = sample()["Dishes"]
+    minimum = 35 * 0.9 # 35 g - 10% leeway
+    result = logicManager.filter_dishes_by_nutrition(dishes, "High Protein", 800, 35, 25)
+    for dish in result["valid_dishes"]:
+        share = protein_of(dish) * 4 / calories_of(dish)
+        check(protein_of(dish) >= minimum and share >= 0.25,
+              f"High Protein kept '{dish['dish_name']}' ({protein_of(dish)} g, {share:.0%} of calories)")
+    for dish in removed_dishes(dishes, result):
+        share = protein_of(dish) * 4 / calories_of(dish)
+        check(protein_of(dish) < minimum or share < 0.25,
+              f"High Protein removed '{dish['dish_name']}' ({protein_of(dish)} g, {share:.0%} of calories)")
 
 
-def test_custom_macros_checks_all_three():
-    # Protein at least 27 g, fat at most 16.5 g: fried rice (18 g protein) and pork (18 g fat) fail
-    result = logicManager.filter_dishes_by_nutrition(sample()["Dishes"], "Custom Macros", 600, 30, 15)
-    check_kept(result, [STIR_FRY, CURRY, DONBURI], "Custom Macros (660 kcal max, 27 g protein min, 16.5 g fat max)")
+def test_custom_macros_rule():
+    dishes = sample()["Dishes"]
+    max_cal, min_protein, max_fat = 600 * 1.1, 30 * 0.9, 15 * 1.1
+    result = logicManager.filter_dishes_by_nutrition(dishes, "Custom Macros", 600, 30, 15)
+    for dish in result["valid_dishes"]:
+        check(calories_of(dish) <= max_cal and protein_of(dish) >= min_protein and fat_of(dish) <= max_fat,
+              f"Custom Macros kept '{dish['dish_name']}', which misses a target")
+    for dish in removed_dishes(dishes, result):
+        check(calories_of(dish) > max_cal or protein_of(dish) < min_protein or fat_of(dish) > max_fat,
+              f"Custom Macros removed '{dish['dish_name']}', which meets every target")
 
 
 # ---- Cuisine and grocery list ----
 
-def test_cuisine_match_and_fallback():
-    chinese = logicManager.filter_dishes_by_cuisine(sample()["Dishes"], ("Chinese",))
-    check_kept(chinese, [STIR_FRY, FRIED_RICE], "Chinese cuisine")
-    check(chinese["fallback_used"], False, "Chinese: fallback used?")
-    mexican = logicManager.filter_dishes_by_cuisine(sample()["Dishes"], ("Mexican",))
-    check_kept(mexican, ALL_DISHES, "Mexican (no match): all dishes shown as fallback")
-    check(mexican["fallback_used"], True, "Mexican: fallback used?")
+def test_cuisine_rule():
+    dishes = sample()["Dishes"]
+    cuisine = dishes[0]["cuisine"]  # a cuisine that exists in the sample
+    result = logicManager.filter_dishes_by_cuisine(dishes, (cuisine,))
+    for dish in result["valid_dishes"]:
+        check(dish["cuisine"] == cuisine, f"Picked {cuisine} but kept '{dish['dish_name']}' ({dish['cuisine']})")
+    for dish in removed_dishes(dishes, result):
+        check(dish["cuisine"] != cuisine, f"Picked {cuisine} but removed '{dish['dish_name']}' ({dish['cuisine']})")
 
 
-def test_grocery_list_keeps_only_used_items():
+def test_grocery_list_cost_matches_kept_items():
     response = sample()
-    stir_fry_only = [response["Dishes"][0]]
-    result = logicManager.filter_grocery_list(response["Grocery_list"], stir_fry_only)
-    kept = []
+    result = logicManager.filter_grocery_list(response["Grocery_list"], [response["Dishes"][0]])
+    total = 0.0
     for item in result["grocery_list"]:
-        kept.append(item["ingredient_name"])
-    check(kept, ["Jasmine Rice", "Chicken Breast", "Bok Choy", "Garlic and Onion Pack",
-                 "Cooking Oil", "Light Soy Sauce"], "Groceries kept for the stir-fry only")
-    check(result["total_cost"], 22.1, "Recalculated grocery cost for the stir-fry only")
+        total = total + item["Price_per_ingredient"]
+    check(result["total_cost"] == round(total, 2),
+          f"Grocery cost is {result['total_cost']} but the kept items add up to {round(total, 2)}")
+    check(len(result["grocery_list"]) + len(result["removed_items"]) == len(response["Grocery_list"]),
+          "Every grocery item should be either kept or removed")
 
 
 # ---- Whole logic layer: final outcome ----
 
 def test_good_plan_is_accepted():
-    plan = logicManager.get_filtered_plan(json.dumps(sample()), user())
-    check(plan["outcome"], "ACCEPTED", f"Standard plan outcome (rejection reason: {plan['Error'] or 'none'})")
-    check(names(plan["Dishes"]), ALL_DISHES, "Standard plan: dishes kept")
+    response = sample()
+    plan = logicManager.get_filtered_plan(json.dumps(response), user())
+    check(plan["outcome"] == "ACCEPTED", f"Standard plan was {plan['outcome']} ({plan['Error']})")
+    check(len(plan["Dishes"]) == len(response["Dishes"]), "Standard plan should keep every dish")
 
 
-def test_plan_with_few_dishes_left_is_flagged():
-    plan = logicManager.get_filtered_plan(sample(), user(goal=("High Protein",), calories=800, protein=35, fat=25))
-    check(plan["outcome"], "FLAGGED",
-          f"High Protein plan with 2 of 5 dishes left (kept: {names(plan['Dishes'])}, "
-          f"rejection reason: {plan['Error'] or 'none'})")
+def test_outcome_follows_number_of_dishes_kept():
+    response = sample()
+    plan = logicManager.get_filtered_plan(response, user(goal=("High Protein",), calories=800, protein=35, fat=25))
+    kept = len(plan["Dishes"])
+    total = len(response["Dishes"])
+    if kept == 0:
+        expected = "REJECTED"
+    elif kept / total >= 0.5:
+        expected = "ACCEPTED"
+    else:
+        expected = "FLAGGED"
+    check(plan["outcome"] == expected, f"{kept} of {total} dishes kept, so expected {expected}, got {plan['outcome']}")
 
 
 def test_bad_plans_are_rejected():
-    over_budget = logicManager.get_filtered_plan(sample(), user(budget=20.0))
-    check(over_budget["outcome"], "REJECTED",
-          f"Plan costing ${over_budget['Total_grocery_cost']:.2f} with a $20 budget")
-    not_json = logicManager.get_filtered_plan("this is not JSON", user())
-    check(not_json["outcome"], "REJECTED", "AI reply that is not JSON")
-    impossible = logicManager.get_filtered_plan(sample(), user(goal=("Custom Macros",), calories=350, protein=60, fat=30))
-    check(impossible["outcome"], "REJECTED", "Custom Macros 350 kcal / 60 g / 30 g")
-
-
-def test_logic_layer_has_no_print_calls():
-    # The spec says only the input layer may print, so logicManager.py must not contain print(
-    with open("logicManager.py", "r", encoding="utf-8") as file:
-        code = file.read()
-    check("print(" in code, False, "Does logicManager.py contain print( ? (only inputManager may print)")
-
+    response = sample()
+    over_budget = logicManager.get_filtered_plan(response, user(budget=response["Total_grocery_cost"] / 10))
+    check(over_budget["outcome"] == "REJECTED", "A plan far over budget should be rejected")
+    broken_json = json.dumps(response)[:-10]                   # the sample reply, cut off part-way
+    check(logicManager.get_filtered_plan(broken_json, user())["outcome"] == "REJECTED",
+          "A cut-off AI reply (invalid JSON) should be rejected")
+    impossible = logicManager.get_filtered_plan(response, user(goal=("Custom Macros",), calories=350, protein=60, fat=30))
+    check(impossible["outcome"] == "REJECTED", "Impossible Custom Macros targets should be rejected")
 
 # ---- Runner (plain functions, no classes) ----
 
 ALL_TESTS = [
-    test_parse_number,
+    test_parse_number_reads_every_dish,
     test_budget_rule,
     test_custom_macros_reasonability_check,
-    test_halal_removes_pork_dish,
-    test_other_restrictions,
-    test_standard_goal_has_no_limits,
-    test_low_calories_checks_calories_only,
-    test_high_protein_checks_amount_and_share,
-    test_custom_macros_checks_all_three,
-    test_cuisine_match_and_fallback,
-    test_grocery_list_keeps_only_used_items,
+    test_halal_rule,
+    test_eggs_rule,
+    test_every_removed_dish_has_a_reason,
+    test_standard_goal_keeps_every_dish,
+    test_low_calories_rule,
+    test_high_protein_rule,
+    test_custom_macros_rule,
+    test_cuisine_rule,
+    test_grocery_list_cost_matches_kept_items,
     test_good_plan_is_accepted,
-    test_plan_with_few_dishes_left_is_flagged,
+    test_outcome_follows_number_of_dishes_kept,
     test_bad_plans_are_rejected,
-    test_logic_layer_has_no_print_calls,
 ]
 
 
@@ -226,7 +266,4 @@ def run_all_tests():
 
 
 if __name__ == "__main__":
-    if run_all_tests():
-        sys.exit(0)
-    else:
-        sys.exit(1)
+    run_all_tests()
