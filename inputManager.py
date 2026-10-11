@@ -255,17 +255,17 @@ def main_input():
         return all_input
 
 def main_menu():
-        print("\nMain Menu")
-        print("-" * 30)
-        print("1. Generate Meal Plan\n2. Manage Meal Plans\n3. Exit")
+    print("\nMain Menu")
+    print("-" * 30)
+    print("1. Generate Meal Plan\n2. Manage Meal Plans\n3. Exit")
 
-        choice = input("\nPlease select an option (1-3): ")
+    while True:
+        choice = input("\nPlease select an option (1-3): ").strip()
 
-        if 1 <= int(choice) <= 3:
+        if choice.isdigit() and 1 <= int(choice) <= 3:
             return int(choice)
 
         print("Invalid choice. Please select 1-3.")
-        return None
 
 
 
