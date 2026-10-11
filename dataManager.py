@@ -209,6 +209,7 @@ def filter_by_name(name):
 
     return results
 
+#Nur Jannah's Code for Update and Delete Functions
 
 def update_meal_plan_name(plan_id, new_name):
     records = load_records()
@@ -224,4 +225,20 @@ def update_meal_plan_name(plan_id, new_name):
             return True
 
     print("Meal plan not found.")
+    return False
+
+def delete_meal_plan(plan_id):
+    records = load_records()
+
+    for plan in records:
+        if str(plan.get("id")) == str(plan_id): 
+            records.remove(plan)
+
+            with open(DATA_FILE, "w") as file:
+                json.dump(records, file, indent=4)
+
+            print("\nMeal plan deleted successfully!")
+            return True
+
+    print("\nMeal plan not found.")
     return False

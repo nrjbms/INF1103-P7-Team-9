@@ -238,6 +238,7 @@ def main_input():
         combined_input = [name_input, budget_input, pax_input, selected_restrictions, selected_goals, calorie_count, selected_cuisine, country_input, protein_count, fat_count]
         all_input = (combined_input)
 
+        print()
         print("         MEAL PLANNER PROFILE SEARCH        ")
         print("="*40)
         print(f"User Name: {name_input}")
@@ -256,15 +257,16 @@ def main_input():
 def main_menu():
         print("\nMain Menu")
         print("-" * 30)
-        print("1. Generate Meal Plan\n2. View Saved Meal Plans\n3. Change Meal Plan Name\n4. Exit")
+        print("1. Generate Meal Plan\n2. Manage Meal Plans\n3. Exit")
 
-        choice = input("\nPlease select an option (1-4): ")
+        choice = input("\nPlease select an option (1-3): ")
 
-        if 1 <= int(choice) <= 4:
+        if 1 <= int(choice) <= 3:
             return int(choice)
 
-        print("Invalid choice. Please select 1-4.")
+        print("Invalid choice. Please select 1-3.")
         return None
+
 
 
 
@@ -372,7 +374,7 @@ def get_selected_plan(meal_plans):
                 if plan.get('id') == choice:
                     return plan
 
-        print("Invalid input. Please enter a valid ID.")
+        print("\nInvalid input. Please enter a valid ID.")
 
 
 def display_recipe_details(recipe):
@@ -409,23 +411,26 @@ def get_selected_recipe(plan):
         if choice.isdigit() and 1 <= int(choice) <= len(plan["Dishes"]):
             display_recipe_details(plan["Dishes"][int(choice) - 1])
         else:
-            print("Invalid input. Please enter a valid number.")
+            print("\nInvalid input. Please enter a valid number.")
             
-def saved_plans_menu():
-    print("\nSaved Meal Plans")
+def  manage_plans_menu():
+    print("\nManage Meal Plans")
     print("-" * 50)
     print("1. View All Plans")
     print("2. Filter by Name")
     print("3. Filter by Budget")
-    print("4. Back to Main Menu")
+    print("4. Rename Meal Plan")
+    print("5. Delete Meal Plan")
+    print("6. Back to Main Menu")
 
-    choice = input("\nPlease select an option (1-4): ")
+    choice = input("\nPlease select an option (1-6): ")
 
-    if choice.isdigit() and 1 <= int(choice) <= 4:
+    if choice.isdigit() and 1 <= int(choice) <= 6:
         return int(choice)
 
-    print("Invalid choice. Please select 1-4.")
+    print("Invalid choice. Please select 1-6.")
     return None
+
 
 
 def display_filtered_plans(filtered_plans):
@@ -451,9 +456,7 @@ def get_selected_filtered_plan(filtered_plans):
         return None
 
     while True:
-        choice = input(
-            "Enter the ID of the meal plan to view, or 'back' to go back: "
-        )
+        choice = input("\nEnter the ID of the meal plan to view, or 'back' to go back: ")
 
         if choice.lower() == "back":
             return None
@@ -462,12 +465,12 @@ def get_selected_filtered_plan(filtered_plans):
             if str(plan.get("id")) == choice:
                 return plan
 
-        print("Invalid ID. Please select a plan from the displayed results.")
+        print("\nInvalid ID. Please select a plan from the displayed results.")
 
 
 def ask_regenerate():
     while True:
-        again = input("Do you want to regenerate? (Yes/No): ")
+        again = input("\nDo you want to regenerate? (Yes/No): ")
         again = again.strip().lower()
 
         if again == "yes":
@@ -475,7 +478,7 @@ def ask_regenerate():
         elif again == "no":
             return False
         else:
-            print("Invalid input. Please enter Yes or No.")
+            print("\nInvalid input. Please enter Yes or No.")
 
 
 def change_meal_plan_name(plan):
@@ -489,7 +492,51 @@ def change_meal_plan_name(plan):
         if new_name:
             return new_name
         else:
-            print("Name cannot be empty. Please try again.")
+            print("\nName cannot be empty. Please try again.")
+
+def delete_meal_plan(meal_plans):
+    display_all_plans(meal_plans)
+
+    selected_plan = get_selected_plan(meal_plans)
+
+    if selected_plan is None:
+        return
+
+    print(f"\nSelected meal plan: \n{selected_plan.get('name', 'N/A')}")
+
+    while True:
+        confirm = input("\nAre you sure you want to delete this meal plan? (yes/no): ")
+        confirm = confirm.strip().lower()
+
+        if confirm == "yes":
+            import dataManager
+            dataManager.delete_meal_plan(selected_plan["id"])
+            return
+
+        elif confirm == "no":
+            print("\nDeletion cancelled.")
+            return
+
+        else:
+            print("\nInvalid input. Please enter Yes or No.")
+            
+
+def get_name_filter():
+    return input("\nEnter the name to search for: ").strip()
+
+
+def get_budget_filter():
+    while True:
+        try:
+            budget = float(input("\nEnter the budget to filter by: $"))
+
+            if budget < 0:
+                print("\nBudget cannot be negative.")
+            else:
+                return budget
+
+        except ValueError:
+            print("\nInvalid budget. Please enter a number.")
 
 
 PLAN_KEYS = ("pax", "Total_grocery_cost", "Grocery_list", "Dishes")
@@ -513,7 +560,7 @@ def get_accept_reject_menu(plan, dish_selection_prompt, user_input, dataManager)
             print("Warning: Failed to save the record data.")
 
         try:
-            selected_dish_idx = int(input("Enter the number of the dish to view its recipe: "))
+            selected_dish_idx = int(input("\nEnter the number of the dish to view its recipe: "))
             if 1 <= selected_dish_idx <= len(dishes):
                 dish = dishes[selected_dish_idx - 1]
                 print(f"\n--- Recipe for {dish.get('dish_name')} ---")
