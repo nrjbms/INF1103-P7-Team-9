@@ -1,6 +1,5 @@
 import json
 import math
-import re
 from dietaryRules import RESTRICTED_KEYWORDS, RESTRICTION_EXCEPTIONS
 
 # Default limits for the meal goals
@@ -12,23 +11,63 @@ HIGH_PROTEIN_MIN_RATIO = 0.25    # protein must supply >= 25% of calories
 PROTEIN_KCAL_PER_GRAM = 4        # 1 g of protein = 4 kcal
 FAT_KCAL_PER_GRAM = 9            # 1 g of fat = 9 kcal
 
+
+# Read the first number out of a value, e.g. "540 kcal" -> 540.0, "1,200 kcal" -> 1200.0
+# Returns None if there is no number in it.
 def parse_number(value):
-    if isinstance(value, (int, float)) and not isinstance(value, bool):
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, (int, float)):
         return float(value)
-    if isinstance(value, str):
-        number = ""
-        for char in value.replace(",", ""):       # "1,200 kcal" -> "1200 kcal"
-            if char.isdigit():
-                number += char
-            elif char == "." and "." not in number:  # allows ".5"
-                number += char
-            elif number.strip(".") != "":            # a number has been read, stop
+    if not isinstance(value, str):
+        return None
+
+    number = ""
+    for char in value.replace(",", ""):
+        if char.isdigit():
+            number = number + char
+        elif char == "." and "." not in number:
+            number = number + char
+        elif number != "" and number != ".":
+            break
+        else:
+            number = ""               # a lone "." (e.g. "kcal. 500"), throw it away
+
+    if number == "" or number == ".":
+        return None
+    return float(number)
+
+
+# Split text into lowercase words, treating anything that is not a letter as a space.
+# "Minced Pork, Garlic" -> ["minced", "pork", "garlic"]
+def split_into_words(text):
+    letters_only = ""
+    for char in str(text).lower():
+        if char.isalpha():
+            letters_only = letters_only + char
+        else:
+            letters_only = letters_only + " "
+    return letters_only.split()
+
+
+# True if the keyword appears as whole word(s) in the word list, allowing a plural ending.
+# "egg" matches ["fresh", "eggs"] but not ["eggplant"]; "soy sauce" matches ["light", "soy", "sauce"].
+def contains_keyword(words, keyword):
+    keyword_words = keyword.split()
+    size = len(keyword_words)
+
+    for start in range(len(words) - size + 1):
+        all_match = True
+        for i in range(size):
+            word = words[start + i]
+            target = keyword_words[i]
+            if word != target and word != target + "s" and word != target + "es":
+                all_match = False
                 break
-            else:                                    # a lone "." (e.g. "kcal. 500"), discard it
-                number = ""
-        if number.strip(".") != "":
-            return float(number)
-    return None
+        if all_match:
+            return True
+    return False
+
 
 # Reasonability check for Custom Macros targets.
 # Protein and fat contain calories, so together they cannot add up to more than the calorie goal.
@@ -42,70 +81,89 @@ def check_macro_targets(calories, protein, fat):
 
     macro_calories = protein * PROTEIN_KCAL_PER_GRAM + fat * FAT_KCAL_PER_GRAM
     if macro_calories > calories:
-        return False, (f"Your protein ({protein:g}g) and fat ({fat:g}g) targets add up to "
-                       f"{macro_calories:g} kcal, which is more than your calorie goal of "
-                       f"{calories:g} kcal. Please lower protein or fat, or raise calories.")
+        message = (f"Your protein ({round(protein)}g) and fat ({round(fat)}g) targets add up to "
+                   f"{round(macro_calories)} kcal, which is more than your calorie goal of "
+                   f"{round(calories)} kcal. Please lower protein or fat, or raise calories.")
+        return False, message
     return True, ""
+
 
 # Budget Rule
 def check_budget_compliance(total_grocery_cost, total_budget):
     total_grocery_cost = parse_number(total_grocery_cost)
     total_budget = parse_number(total_budget)
-    
+
     if total_budget is None or math.isnan(total_budget) or math.isinf(total_budget):
         return {"status": "ERROR", "reason": "Budget is not a valid number."}
 
     elif total_grocery_cost is None:
         return {"status": "ERROR", "reason": "Grocery cost not found."}
-    
+
     elif total_grocery_cost > total_budget:
         return {
-            "status": "REJECTED", 
+            "status": "REJECTED",
             "reason": f"Total grocery cost (${total_grocery_cost:.2f}) exceeds total budget (${total_budget:.2f})"
         }
     return {
-        "status": "ACCEPTED", 
+        "status": "ACCEPTED",
         "reason": f"Total grocery cost (${total_grocery_cost:.2f}) is within total budget (${total_budget:.2f})"
     }
 
+
+# Keep only the items that are dictionaries (skips broken data from the AI)
+def only_dishes(ai_dishes):
+    dishes = []
+    if ai_dishes is None:
+        return dishes
+    for dish in ai_dishes:
+        if isinstance(dish, dict):
+            dishes.append(dish)
+    return dishes
+
+
 # Dietary Restrictions Filter
 def filter_dishes_by_dietary_rules(ai_dishes, dietary_restrictions):
-    if ai_dishes is None:
-        ai_dishes = []
-    dishes = [dish for dish in ai_dishes if isinstance(dish, dict)]
+    dishes = only_dishes(ai_dishes)
 
     if dietary_restrictions is None:
         dietary_restrictions = ()
     elif isinstance(dietary_restrictions, str):
         dietary_restrictions = (dietary_restrictions,)
 
-    restrictions = [r.strip().lower() for r in dietary_restrictions if r.strip().lower() != "none"]
+    restrictions = []
+    for restriction in dietary_restrictions:
+        restriction = restriction.strip().lower()
+        if restriction != "none":
+            restrictions.append(restriction)
 
     matching = []
     flagged = []
-    if not restrictions:
+    if len(restrictions) == 0:
         matching = dishes
     else:
         for dish in dishes:
             name = dish.get("dish_name")
             # Check the dish name too, e.g. "Pork Bolognese"
-            text = f"{dish.get('dish_name') or ''} {dish.get('ingredients') or ''}".lower()
+            text = str(dish.get("dish_name") or "") + " " + str(dish.get("ingredients") or "")
+            text = text.lower()
 
             found = []
             for restriction in restrictions:
+                # Remove safe phrases first, e.g. "coconut milk" is not dairy
                 check_text = text
                 for safe_phrase in RESTRICTION_EXCEPTIONS.get(restriction, []):
                     check_text = check_text.replace(safe_phrase, " ")
+                words = split_into_words(check_text)
+
                 # Unknown restrictions fall back to matching the restriction word itself
                 for keyword in RESTRICTED_KEYWORDS.get(restriction, [restriction]):
-                    # whole word, with optional plural: "egg" matches "eggs" but not "eggplant"
-                    if re.search(r"\b" + re.escape(keyword) + r"(e?s)?\b", check_text):
+                    if contains_keyword(words, keyword):
                         found.append(f"{keyword} ({restriction})")
 
-            if found:
+            if len(found) > 0:
                 flagged.append({
                     "dish_name": name,
-                    "reason": f"Dish contains restricted ingredients: {', '.join(found)}"
+                    "reason": "Dish contains restricted ingredients: " + ", ".join(found)
                 })
             else:
                 matching.append(dish)
@@ -113,9 +171,9 @@ def filter_dishes_by_dietary_rules(ai_dishes, dietary_restrictions):
     # If every dish breaks a restriction, NO dish is safe (never fall back to unsafe dishes)
     return {
         "valid_dishes": matching,
-        "valid_dish_names": [dish.get("dish_name") for dish in matching],
         "flagged_dishes": flagged,
     }
+
 
 # Macro & Nutritional Rules (Multi-Condition Rule)
 def filter_dishes_by_nutrition(ai_dishes, meal_goal, target_cal=None,
@@ -128,17 +186,29 @@ def filter_dishes_by_nutrition(ai_dishes, meal_goal, target_cal=None,
 
     # Accept "Low Calories", ("Low Calories",), "low calorie", etc.
     if isinstance(meal_goal, (tuple, list)):
-        meal_goal = meal_goal[0] if meal_goal else None
-    goal = str(meal_goal).strip().lower() if meal_goal is not None else "none"
+        if len(meal_goal) > 0:
+            meal_goal = meal_goal[0]
+        else:
+            meal_goal = None
+    if meal_goal is None:
+        goal = "none"
+    else:
+        goal = str(meal_goal).strip().lower()
 
-    if goal in ("low calorie", "low calories"):
+    if goal == "low calorie" or goal == "low calories":
         # Low Calories: calorie limit only
-        max_cal = target_cal if target_cal is not None else LOW_CALORIE_MAX
+        if target_cal is not None:
+            max_cal = target_cal
+        else:
+            max_cal = LOW_CALORIE_MAX
     elif goal == "high protein":
         # High Protein: protein minimum and protein share of calories only
-        min_protein = target_protein if target_protein is not None else HIGH_PROTEIN_MIN
+        if target_protein is not None:
+            min_protein = target_protein
+        else:
+            min_protein = HIGH_PROTEIN_MIN
         min_ratio = HIGH_PROTEIN_MIN_RATIO
-    elif goal in ("custom macros", "custom"):
+    elif goal == "custom macros" or goal == "custom":
         # Custom Macros: the user's own calorie, protein and fat targets
         max_cal = target_cal
         min_protein = target_protein
@@ -178,26 +248,26 @@ def filter_dishes_by_nutrition(ai_dishes, meal_goal, target_cal=None,
         if fat is None and max_fat is not None:
             missing.append("fat")
 
-        if missing:
+        if len(missing) > 0:
             reasons.append("Missing or unreadable nutrition data: " + ", ".join(missing))
         else:
             # Condition A: calorie cap
             if max_cal is not None and calories > max_cal:
-                reasons.append(f"Calories ({calories:g} kcal) exceed target ({max_cal:.0f} kcal)")
+                reasons.append(f"Calories ({round(calories)} kcal) exceed target ({round(max_cal)} kcal)")
             # Condition B: protein floor
             if min_protein is not None and protein < min_protein:
-                reasons.append(f"Protein ({protein:g}g) below target ({min_protein:g}g)")
+                reasons.append(f"Protein ({round(protein, 1)}g) below target ({round(min_protein, 1)}g)")
             # Condition C: fat cap
             if max_fat is not None and fat > max_fat:
-                reasons.append(f"Fat ({fat:g}g) exceeds target ({max_fat:g}g)")
+                reasons.append(f"Fat ({round(fat, 1)}g) exceeds target ({round(max_fat, 1)}g)")
             # Condition D: macro balance for the chosen goal
             if min_ratio is not None and calories > 0:
                 ratio = (protein * PROTEIN_KCAL_PER_GRAM) / calories
                 if ratio < min_ratio:
-                    reasons.append(f"Protein provides only {ratio:.0%} of calories "
-                                f"(goal needs {min_ratio:.0%})")
+                    reasons.append(f"Protein provides only {round(ratio * 100)}% of calories "
+                                   f"(goal needs {round(min_ratio * 100)}%)")
 
-        if reasons:
+        if len(reasons) > 0:
             flagged_dishes.append({"dish_name": name, "reason": "; ".join(reasons)})
         else:
             valid_dishes.append(dish)
@@ -205,14 +275,12 @@ def filter_dishes_by_nutrition(ai_dishes, meal_goal, target_cal=None,
     return {
         "flagged_dishes": flagged_dishes,
         "valid_dishes": valid_dishes,
-        "valid_dish_names": [dish.get("dish_name") for dish in valid_dishes],
     }
+
 
 # Preference Rules
 def filter_dishes_by_cuisine(ai_dishes, preferred_cuisines):
-    if ai_dishes is None:
-        ai_dishes = []
-    dishes = [dish for dish in ai_dishes if isinstance(dish, dict)]
+    dishes = only_dishes(ai_dishes)
 
     if preferred_cuisines is None:
         preferred_cuisines = ()
@@ -225,7 +293,7 @@ def filter_dishes_by_cuisine(ai_dishes, preferred_cuisines):
 
     matching = []
     flagged = []
-    if not preferences or "anything" in preferences:
+    if len(preferences) == 0 or "anything" in preferences:
         matching = dishes
     else:
         for dish in dishes:
@@ -233,48 +301,64 @@ def filter_dishes_by_cuisine(ai_dishes, preferred_cuisines):
             if cuisine.lower() in preferences:
                 matching.append(dish)
             else:
-                flagged.append({"dish_name": dish.get("dish_name"),"reason": f"Cuisine '{cuisine}' not in preferences"})
-                
+                flagged.append({"dish_name": dish.get("dish_name"), "reason": f"Cuisine '{cuisine}' not in preferences"})
+
     if len(matching) == 0 and len(dishes) > 0:
         return {
             "fallback_used": True,
             "valid_dishes": dishes,
-            "valid_dish_names": [d.get("dish_name") for d in dishes],
             "flagged_dishes": [],   # these dishes are shown, so don't list them as flagged
         }
     return {
         "fallback_used": False,
         "valid_dishes": matching,
-        "valid_dish_names": [d.get("dish_name") for d in matching],
         "flagged_dishes": flagged,
     }
 
-# Turn a name into a set of singular words: "Fresh Eggs" -> {"fresh", "egg"}
+
+# Turn one word into its singular form: "eggs" -> "egg", "tomatoes" -> "tomato", "berries" -> "berry"
+def make_singular(word):
+    if word.endswith("ies") and len(word) > 4:
+        return word[:-3] + "y"
+    if word.endswith("oes") and len(word) > 4:
+        return word[:-2]
+    if word.endswith("s") and not word.endswith("ss") and len(word) > 3:
+        return word[:-1]
+    return word
+
+
+# Turn a name into a list of singular words: "Fresh Eggs" -> ["fresh", "egg"]
 def singular_words(text):
-    words = set()
-    for word in re.findall(r"[a-z]+", str(text).lower()):
-        if word.endswith("ies") and len(word) > 4:
-            word = word[:-3] + "y"           # berries -> berry
-        elif word.endswith("oes") and len(word) > 4:
-            word = word[:-2]                 # tomatoes -> tomato
-        elif word.endswith("s") and not word.endswith("ss") and len(word) > 3:
-            word = word[:-1]                 # eggs -> egg, onions -> onion
-        words.add(word)
+    words = []
+    for word in split_into_words(text):
+        words.append(make_singular(word))
     return words
+
+
+# True if every word in small_list is also in big_list
+def all_words_in(small_list, big_list):
+    for word in small_list:
+        if word not in big_list:
+            return False
+    return True
+
 
 # Grocery list filter: keep only ingredients used by the remaining dishes
 def filter_grocery_list(grocery_list, valid_dishes):
-    # Collect every ingredient used by the dishes that passed, as word sets
+    # Collect every ingredient used by the dishes that passed, as lists of words
     used = []
     for dish in valid_dishes:
-        for ing in str(dish.get("ingredients") or "").split(","):
-            ing_words = singular_words(ing)
-            if ing_words:
-                used.append(ing_words)
+        for ingredient in str(dish.get("ingredients") or "").split(","):
+            ingredient_words = singular_words(ingredient)
+            if len(ingredient_words) > 0:
+                used.append(ingredient_words)
+
+    if grocery_list is None:
+        grocery_list = []
 
     kept_items = []
     removed_items = []
-    for item in grocery_list or []:
+    for item in grocery_list:
         if not isinstance(item, dict):
             continue
         name_words = singular_words(item.get("ingredient_name", ""))
@@ -283,10 +367,11 @@ def filter_grocery_list(grocery_list, valid_dishes):
         # "garlic" matches "Garlic and Onion Pack", "Egg" matches "Fresh Eggs",
         # "Chicken Breast Fillet" matches "Chicken Breast"
         is_used = False
-        for ing_words in used:
-            if name_words and (ing_words <= name_words or name_words <= ing_words):
-                is_used = True
-                break
+        if len(name_words) > 0:
+            for ingredient_words in used:
+                if all_words_in(ingredient_words, name_words) or all_words_in(name_words, ingredient_words):
+                    is_used = True
+                    break
 
         if is_used:
             kept_items.append(item)
@@ -295,13 +380,16 @@ def filter_grocery_list(grocery_list, valid_dishes):
 
     new_cost = 0.0
     for item in kept_items:
-        new_cost += parse_number(item.get("Price_per_ingredient")) or 0.0
+        price = parse_number(item.get("Price_per_ingredient"))
+        if price is not None:
+            new_cost = new_cost + price
 
     return {
         "grocery_list": kept_items,
         "removed_items": removed_items,
         "total_cost": round(new_cost, 2),
     }
+
 
 def process_ai_response(ai_output, user_input):
     # Step 1: The AI manager returns JSON as text, so convert it to a dictionary.
@@ -310,7 +398,7 @@ def process_ai_response(ai_output, user_input):
             ai_output = json.loads(ai_output)
         except json.JSONDecodeError:
             ai_output = {"Error": ai_output}
- 
+
     # Step 2: Start with a rejected plan. It only improves if every check passes.
     plan = {
         "pax": 0,
@@ -322,17 +410,23 @@ def process_ai_response(ai_output, user_input):
         "warnings": [],
         "flagged_dishes": [],
     }
- 
+
     # Custom Macros: make sure the user's targets are actually possible
-    macro_ok, macro_error = True, ""
+    macro_ok = True
+    macro_error = ""
     if isinstance(user_input, dict):
         goal_name = str(user_input.get("Meal_goal") or "").strip().lower()
-        if goal_name in ("custom macros", "custom"):
+        if goal_name == "custom macros" or goal_name == "custom":
             macro_ok, macro_error = check_macro_targets(
                 user_input.get("Calorie_count_per_meal_input"),
                 user_input.get("Protein_per_meal_input"),
                 user_input.get("Fats_per_meal"),
             )
+
+    # The AI's Error field: "None", "N/A", "" etc. mean there is no error
+    ai_error = ""
+    if isinstance(ai_output, dict) and ai_output.get("Error") is not None:
+        ai_error = str(ai_output.get("Error")).strip()
 
     # Step 3: Check the data, then run the rules
     if not isinstance(ai_output, dict) or not isinstance(user_input, dict):
@@ -340,32 +434,34 @@ def process_ai_response(ai_output, user_input):
 
     elif not macro_ok:
         plan["Error"] = macro_error
- 
-    elif str(ai_output.get("Error") or "").strip().lower() not in NO_ERROR_VALUES:
-        plan["Error"] = str(ai_output["Error"]).strip()
- 
+
+    elif ai_error.lower() not in NO_ERROR_VALUES:
+        plan["Error"] = ai_error
+
     elif not isinstance(ai_output.get("Dishes"), list) or len(ai_output["Dishes"]) == 0:
         plan["Error"] = "The AI returned no dishes"
- 
+
     else:
-        dishes = [dish for dish in ai_output["Dishes"] if isinstance(dish, dict)]
+        dishes = only_dishes(ai_output["Dishes"])
 
         # Pax: use the user's number, warn if the AI planned for a different number
         user_pax = parse_number(user_input.get("Pax"))
         ai_pax = parse_number(ai_output.get("pax"))
-        plan["pax"] = int(user_pax) if user_pax else (int(ai_pax) if ai_pax else 0)
+        if user_pax:
+            plan["pax"] = int(user_pax)
+        elif ai_pax:
+            plan["pax"] = int(ai_pax)
         if user_pax and ai_pax and user_pax != ai_pax:
             plan["warnings"].append(
-                f"The AI planned for {ai_pax:g} pax but you asked for {user_pax:g}"
+                f"The AI planned for {round(ai_pax)} pax but you asked for {round(user_pax)}"
             )
 
-        # Filter 1: dietary safety (uses the dish objects directly, not names)
+        # Filter 1: dietary safety
         diet = filter_dishes_by_dietary_rules(dishes, user_input.get("Dietary_restrictions"))
-        safe_dishes = diet["valid_dishes"]
 
         # Filter 2: nutrition (multi-condition rule)
         nutrition = filter_dishes_by_nutrition(
-            safe_dishes,
+            diet["valid_dishes"],
             user_input.get("Meal_goal"),
             user_input.get("Calorie_count_per_meal_input"),
             user_input.get("Protein_per_meal_input"),
@@ -385,7 +481,7 @@ def process_ai_response(ai_output, user_input):
         grocery = filter_grocery_list(ai_output.get("Grocery_list", []), valid_dishes)
         plan["Grocery_list"] = grocery["grocery_list"]
         plan["Total_grocery_cost"] = grocery["total_cost"]
-        if grocery["removed_items"]:
+        if len(grocery["removed_items"]) > 0:
             plan["warnings"].append("Removed unused groceries: " + ", ".join(grocery["removed_items"]))
 
         # Budget rule, checked on the NEW cost
@@ -408,31 +504,35 @@ def process_ai_response(ai_output, user_input):
             )
     return plan
 
+
+def get_item(user_input, index):
+    if index < len(user_input):
+        return user_input[index]
+    return None
+
+def get_target(user_input, index):
+    value = parse_number(get_item(user_input, index))
+    if value is None or value <= 0:
+        return None
+    return value
+
 def build_user_input_dict(user_input):
-    # Safe lookup: returns None instead of crashing if the list is too short
-    def get(index):
-        return user_input[index] if len(user_input) > index else None
-
-    goal = get(4)
-    if isinstance(goal, (tuple, list)):        # ('Standard',) → 'Standard'
-        goal = goal[0] if goal else None
-
-    # Read a target number; 0, negative or unreadable means "no target"
-    def get_target(index):
-        value = parse_number(get(index))
-        if value is None or value <= 0:
-            return None
-        return value
+    goal = get_item(user_input, 4)
+    if isinstance(goal, (tuple, list)): # ('Standard',) -> 'Standard'
+        if len(goal) > 0:
+            goal = goal[0]
+        else:
+            goal = None
 
     return {
-        "Total_budget": get(1),
-        "Pax": get(2),
-        "Dietary_restrictions": get(3),
+        "Total_budget": get_item(user_input, 1),
+        "Pax": get_item(user_input, 2),
+        "Dietary_restrictions": get_item(user_input, 3),
         "Meal_goal": goal,
-        "Calorie_count_per_meal_input": get_target(5),
-        "Protein_per_meal_input": get_target(8),
-        "Fats_per_meal": get_target(9),
-        "Cuisine": get(6),
+        "Calorie_count_per_meal_input": get_target(user_input, 5),
+        "Protein_per_meal_input": get_target(user_input, 8),
+        "Fats_per_meal": get_target(user_input, 9),
+        "Cuisine": get_item(user_input, 6),
     }
 
 def get_filtered_plan(ai_output, user_input):

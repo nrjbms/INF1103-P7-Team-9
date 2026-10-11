@@ -2,60 +2,68 @@
 # Feeds the hardcoded sample AI response (sampleoutput.json) into the logic layer
 # and checks every business rule makes the right decision.
 # No live API call, no API key and no .env file needed.
-# Run with:  python test_logicManager.py   (exit code 0 = all passed)
+# Run from the project folder with:  python test_logicManager.py
+# Exit code is 0 if every test passes, 1 if any test fails.
 
-import copy
-import io
 import json
-import os
 import sys
-from contextlib import redirect_stdout
 
 import logicManager
 
-SAMPLE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sampleoutput.json")
-try:
-    with open(SAMPLE_FILE, "r", encoding="utf-8") as file:
-        SAMPLE_AI_RESPONSE = json.load(file)
-except (OSError, json.JSONDecodeError) as error:
-    print(f"Cannot load the sample AI response from {SAMPLE_FILE}")
-    print(f"Make sure sampleoutput.json is next to this test file and is valid JSON. ({error})")
-    sys.exit(1)
+SAMPLE_FILE = "sampleoutput.json"
 
 
+# Load a fresh copy of the sample AI response, so one test can't change another test's data
 def sample():
-    """Fresh copy of the sample AI response, so tests can't affect each other."""
-    return copy.deepcopy(SAMPLE_AI_RESPONSE)
+    try:
+        with open(SAMPLE_FILE, "r", encoding="utf-8") as file:
+            return json.load(file)
+    except (OSError, json.JSONDecodeError) as error:
+        print(f"Cannot load {SAMPLE_FILE}. Run this test from the project folder,")
+        print(f"and make sure {SAMPLE_FILE} is valid JSON. ({error})")
+        sys.exit(1)
 
 
+# User input list in the same order inputManager.main_input() builds it
 def user(budget=50.0, pax=1, restrictions=("None",), goal=("Standard",),
          calories=650, cuisine=("Anything",), protein=27, fat=20):
-    """User input list in the same order inputManager.main_input() builds it."""
     return ["Tester", budget, pax, restrictions, goal, calories, cuisine, "Singapore", protein, fat]
 
 
+# List of dish names from a list of dishes
 def names(dishes):
-    return [dish["dish_name"] for dish in dishes]
+    result = []
+    for dish in dishes:
+        result.append(dish["dish_name"])
+    return result
+
+
+# Compare a result with the expected value; explain the difference if they don't match
+def check(actual, expected, what):
+    if actual != expected:
+        raise AssertionError(f"{what}\n        expected: {expected}\n        got:      {actual}")
+
+
+# Compare the dishes a filter kept, and list why each removed dish was removed
+def check_kept(result, expected_names, what):
+    kept = names(result["valid_dishes"])
+    if kept != expected_names:
+        reasons = ""
+        for flag in result.get("flagged_dishes", []):
+            reasons = reasons + f"\n          - {flag['dish_name']}: {flag['reason']}"
+        if reasons == "":
+            reasons = " none"
+        raise AssertionError(f"{what}\n        expected: {expected_names}\n        got:      {kept}"
+                             f"\n        removed dishes and reasons:{reasons}")
 
 
 # Dish names, read from sampleoutput.json in the order they appear there
-ALL_DISHES = names(SAMPLE_AI_RESPONSE["Dishes"])
-STIR_FRY, BOLOGNESE, CURRY, DONBURI, FRIED_RICE = ALL_DISHES
-
-
-def check(actual, expected, what):
-    """Compare a result with the expected value and explain any difference."""
-    assert actual == expected, f"{what}\n        expected: {expected}\n        got:      {actual}"
-
-
-def check_kept(result, expected_names, what):
-    """Compare the dishes a filter kept, and list why each removed dish was removed."""
-    kept = names(result["valid_dishes"])
-    if kept != expected_names:
-        reasons = "".join(f"\n          - {flag['dish_name']}: {flag['reason']}"
-                          for flag in result.get("flagged_dishes", []))
-        raise AssertionError(f"{what}\n        expected: {expected_names}\n        got:      {kept}"
-                             f"\n        removed dishes and reasons:{reasons or ' none'}")
+ALL_DISHES = names(sample()["Dishes"])
+STIR_FRY = ALL_DISHES[0]
+BOLOGNESE = ALL_DISHES[1]
+CURRY = ALL_DISHES[2]
+DONBURI = ALL_DISHES[3]
+FRIED_RICE = ALL_DISHES[4]
 
 
 # ---- Helper and budget rule ----
@@ -140,7 +148,9 @@ def test_grocery_list_keeps_only_used_items():
     response = sample()
     stir_fry_only = [response["Dishes"][0]]
     result = logicManager.filter_grocery_list(response["Grocery_list"], stir_fry_only)
-    kept = [item["ingredient_name"] for item in result["grocery_list"]]
+    kept = []
+    for item in result["grocery_list"]:
+        kept.append(item["ingredient_name"])
     check(kept, ["Jasmine Rice", "Chicken Breast", "Bok Choy", "Garlic and Onion Pack",
                  "Cooking Oil", "Light Soy Sauce"], "Groceries kept for the stir-fry only")
     check(result["total_cost"], 22.1, "Recalculated grocery cost for the stir-fry only")
@@ -171,31 +181,52 @@ def test_bad_plans_are_rejected():
     check(impossible["outcome"], "REJECTED", "Custom Macros 350 kcal / 60 g / 30 g")
 
 
-def test_logic_layer_never_prints():
-    captured = io.StringIO()
-    with redirect_stdout(captured):
-        logicManager.get_filtered_plan(sample(), user(restrictions=("Halal",)))
-    check(captured.getvalue(), "", "Text printed by logicManager (must be empty: only inputManager may print)")
+def test_logic_layer_has_no_print_calls():
+    # The spec says only the input layer may print, so logicManager.py must not contain print(
+    with open("logicManager.py", "r", encoding="utf-8") as file:
+        code = file.read()
+    check("print(" in code, False, "Does logicManager.py contain print( ? (only inputManager may print)")
 
 
 # ---- Runner (plain functions, no classes) ----
 
+ALL_TESTS = [
+    test_parse_number,
+    test_budget_rule,
+    test_custom_macros_reasonability_check,
+    test_halal_removes_pork_dish,
+    test_other_restrictions,
+    test_standard_goal_has_no_limits,
+    test_low_calories_checks_calories_only,
+    test_high_protein_checks_amount_and_share,
+    test_custom_macros_checks_all_three,
+    test_cuisine_match_and_fallback,
+    test_grocery_list_keeps_only_used_items,
+    test_good_plan_is_accepted,
+    test_plan_with_few_dishes_left_is_flagged,
+    test_bad_plans_are_rejected,
+    test_logic_layer_has_no_print_calls,
+]
+
+
 def run_all_tests():
-    tests = [(name, func) for name, func in globals().items() if name.startswith("test_")]
     failed = 0
-    for name, test in tests:
+    for test in ALL_TESTS:
         try:
             test()
-            print(f"PASS  {name}")
+            print(f"PASS  {test.__name__}")
         except AssertionError as error:
-            failed += 1
-            print(f"FAIL  {name}\n        {error}")
+            failed = failed + 1
+            print(f"FAIL  {test.__name__}\n        {error}")
         except Exception as error:
-            failed += 1
-            print(f"ERROR {name}\n        {type(error).__name__}: {error}")
-    print(f"\n{len(tests) - failed} of {len(tests)} tests passed")
+            failed = failed + 1
+            print(f"ERROR {test.__name__}\n        {type(error).__name__}: {error}")
+    print(f"\n{len(ALL_TESTS) - failed} of {len(ALL_TESTS)} tests passed")
     return failed == 0
 
 
 if __name__ == "__main__":
-    run_all_tests()
+    if run_all_tests():
+        sys.exit(0)
+    else:
+        sys.exit(1)
