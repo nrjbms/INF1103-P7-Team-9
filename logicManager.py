@@ -4,7 +4,7 @@ import re
 from dietaryRules import RESTRICTED_KEYWORDS, RESTRICTION_EXCEPTIONS
 
 # Default limits for the meal goals
-TOLERANCE = 0.10                 # allow dishes 10% leeway on calorie, protein and fat targets
+CALORIE_TOLERANCE = 0.10         # allow dishes to be up to 10% over the per-meal target
 NO_ERROR_VALUES = ("", "none", "null", "n/a", "na", "nil", "no error", "false")
 LOW_CALORIE_MAX = 500            # calorie cap for "Low Calorie"
 HIGH_PROTEIN_MIN = 30            # protein floor (g) for "High Protein"
@@ -101,38 +101,27 @@ def filter_dishes_by_dietary_rules(ai_dishes, dietary_restrictions):
 # Macro & Nutritional Rules (Multi-Condition Rule)
 def filter_dishes_by_nutrition(ai_dishes, meal_goal, target_cal=None,
                                target_protein=None, target_fat=None):
-    # Each goal switches on only its own rule (None = rule is off)
+    # target_cal is the per-meal calorie target from the user    
     max_cal = None
-    min_protein = None
-    max_fat = None
+    min_protein = target_protein
+    max_fat = target_fat
     min_ratio = None
 
-    # Accept "Low Calories", ("Low Calories",), "low calorie", etc.
+    # Accept "Low Calorie", ("Low Calorie",), "low calories", etc.
     if isinstance(meal_goal, (tuple, list)):
         meal_goal = meal_goal[0] if meal_goal else None
     goal = str(meal_goal).strip().lower() if meal_goal is not None else "none"
 
     if goal in ("low calorie", "low calories"):
-        # Low Calories: calorie limit only
-        max_cal = target_cal if target_cal is not None else LOW_CALORIE_MAX
+        cap = target_cal if target_cal is not None else LOW_CALORIE_MAX
+        max_cal = cap * (1 + CALORIE_TOLERANCE)
     elif goal == "high protein":
-        # High Protein: protein minimum and protein share of calories only
-        min_protein = target_protein if target_protein is not None else HIGH_PROTEIN_MIN
+        if min_protein is None:
+            min_protein = HIGH_PROTEIN_MIN
         min_ratio = HIGH_PROTEIN_MIN_RATIO
-    elif goal in ("custom macros", "custom"):
-        # Custom Macros: the user's own calorie, protein and fat targets
-        max_cal = target_cal
-        min_protein = target_protein
-        max_fat = target_fat
-    # "Standard", no goal, or anything else: no nutrition limits
-
-    # 10% leeway: calories and fat may be 10% over, protein 10% under
-    if max_cal is not None:
-        max_cal = max_cal * (1 + TOLERANCE)
-    if min_protein is not None:
-        min_protein = min_protein * (1 - TOLERANCE)
-    if max_fat is not None:
-        max_fat = max_fat * (1 + TOLERANCE)
+    elif target_cal is not None:
+        # "Standard" or "Custom": don't go over the per-meal target
+        max_cal = target_cal * (1 + CALORIE_TOLERANCE)
 
     valid_dishes = []
     flagged_dishes = []
@@ -164,7 +153,7 @@ def filter_dishes_by_nutrition(ai_dishes, meal_goal, target_cal=None,
         else:
             # Condition A: calorie cap
             if max_cal is not None and calories > max_cal:
-                reasons.append(f"Calories ({calories:g} kcal) exceed target ({max_cal:.0f} kcal)")
+                reasons.append(f"Calories ({calories:g} kcal) exceed target ({max_cal:g} kcal)")
             # Condition B: protein floor
             if min_protein is not None and protein < min_protein:
                 reasons.append(f"Protein ({protein:g}g) below target ({min_protein:g}g)")
@@ -384,21 +373,18 @@ def build_user_input_dict(user_input):
     if isinstance(goal, (tuple, list)):        # ('Standard',) → 'Standard'
         goal = goal[0] if goal else None
 
-    # Read a target number; 0, negative or unreadable means "no target"
-    def get_target(index):
-        value = parse_number(get(index))
-        if value is None or value <= 0:
-            return None
-        return value
+    per_meal_cal = parse_number(get(5))
+    if per_meal_cal is not None and per_meal_cal <= 0:
+        per_meal_cal = None
 
     return {
         "Total_budget": get(1),
         "Pax": get(2),
         "Dietary_restrictions": get(3),
         "Meal_goal": goal,
-        "Calorie_count_per_meal_input": get_target(5),
-        "Protein_per_meal_input": get_target(8),
-        "Fats_per_meal": get_target(9),
+        "Calorie_count_per_meal_input": per_meal_cal,
+        "Protein_per_meal_input": parse_number(get(8)),
+        "Fats_per_meal": parse_number(get(9)),
         "Cuisine": get(6),
     }
 
