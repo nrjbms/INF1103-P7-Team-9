@@ -20,7 +20,7 @@ while True:
         exclude = None
 
         while True:
-            prompt = aiManager.craftprompt(user_input[2],user_input[1],user_input[6],exclude)
+            prompt = aiManager.craftprompt(user_input[2],user_input[1],user_input[7],exclude)
 
             ai_output = aiManager.HCodeGeminiAPI(prompt)
 
