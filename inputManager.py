@@ -64,33 +64,41 @@ def open_goal_menu():
     print("Selected Dietary Goals: ", selected)
     return selected
 
+def show_target(value, unit):
+    if value is None:
+        return "No limit"
+    return f"{value}{unit}"
 
 def get_calorie_count(selected_goals): 
-
+    calorie_count = None
+    protein_count = None
+    fat_count = None
     match selected_goals:
             case('Standard',):
-                calorie_count = 650
-                protein_count = 27
-                fat_count = 20
-                print(f"Calorie Count: {calorie_count}kcal")
-                print(f"Protein Count: {protein_count}g")
-                print(f"Fat_Count: {fat_count}g")
+                # calorie_count = 650
+                # protein_count = 27
+                # fat_count = 20
+                # print(f"Calorie Count: {calorie_count}kcal")
+                # print(f"Protein Count: {protein_count}g")
+                # print(f"Fat_Count: {fat_count}g")
+                print("Standard: no calorie, protein or fat limits")
+
 
             case('Low Calories',):
                 calorie_count = 500
-                protein_count = 22
-                fat_count = 15
+                # protein_count = 22
+                # fat_count = 15
                 print(f"Calorie Count: {calorie_count}kcal")
-                print(f"Protein Count: {protein_count}g")
-                print(f"Fat_Count: {fat_count}g")
+                # print(f"Protein Count: {protein_count}g")
+                # print(f"Fat_Count: {fat_count}g")
 
             case('High Protein',):
-                calorie_count = 800
+                # calorie_count = 800
                 protein_count = 35
-                fat_count = 25
-                print(f"Calorie Count: {calorie_count}kcal")
+                # fat_count = 25
+                # print(f"Calorie Count: {calorie_count}kcal")
                 print(f"Protein Count: {protein_count}g")
-                print(f"Fat_Count: {fat_count}g")
+                # print(f"Fat_Count: {fat_count}g")
 
             case('Custom Macros',):
 
@@ -123,21 +131,21 @@ def get_calorie_count(selected_goals):
 
             case('None',):
                 print("Since you have not selected a calorie goal, Standard will be chosen")
-                calorie_count = 550    
-                protein_count = 27
-                fat_count = 20
-                print(f"Calorie Count: {calorie_count}kcal")
-                print(f"Protein Count: {protein_count}g")
-                print(f"Fat_Count: {fat_count}g")                
+                # calorie_count = 550    
+                # protein_count = 27
+                # fat_count = 20
+                # print(f"Calorie Count: {calorie_count}kcal")
+                # print(f"Protein Count: {protein_count}g")
+                # print(f"Fat_Count: {fat_count}g")                
 
             case _:
                 print("Goal not defined. Standard will be chosen")
-                calorie_count = 550
-                protein_count = 27
-                fat_count = 20
-                print(f"Calorie Count: {calorie_count}kcal")
-                print(f"Protein Count: {protein_count}g")
-                print(f"Fat_Count: {fat_count}g")
+                # calorie_count = 550
+                # protein_count = 27
+                # fat_count = 20
+                # print(f"Calorie Count: {calorie_count}kcal")
+                # print(f"Protein Count: {protein_count}g")
+                # print(f"Fat_Count: {fat_count}g")
                      
     return calorie_count, protein_count, fat_count
 
@@ -260,9 +268,9 @@ def main_input():
         print(f"Dietary Restrictions: {selected_restrictions}")
         print(f"Cuisine: {selected_cuisine}")
         print(f"Dietary Goal: {selected_goals}")
-        print(f"Calories: {calorie_count} kcal")
-        print(f"Protein: {protein_count} g")
-        print(f"Fats: {fat_count} g")
+        print(f"Calories: {show_target(calorie_count, ' kcal')}")
+        print(f"Protein: {show_target(protein_count, ' g')}")
+        print(f"Fats: {show_target(fat_count, ' g')}")
         print(f"Target Country: {country_input}")
         print("="*40)
         return all_input
@@ -601,3 +609,15 @@ def get_accept_reject_menu(plan, dish_selection_prompt, user_input, dataManager)
 
         else:
             print("Error. Please select y/n.")
+
+# Show the logic manager's results: removed dishes, rejection reason and warnings (brandon)
+def display_plan_messages(plan):
+    for flagged in plan.get("flagged_dishes", []):
+        print(f"Removed '{flagged['dish_name']}': {flagged['reason']}")
+
+    if plan.get("outcome") == "REJECTED":
+        print("Plan rejected:", plan.get("Error", "Unknown reason"))
+        return
+
+    for warning in plan.get("warnings", []):
+        print("Warning:", warning)
