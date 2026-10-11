@@ -1,603 +1,456 @@
-import pycountry
 import json
+import math
 import re
-import dataManager
-import pdfmaker
+from dietaryRules import RESTRICTED_KEYWORDS, RESTRICTION_EXCEPTIONS
 
-def welcome_msg():
-    print()
-    print("=" *50)
-    print("Welcome to JustEat!")
-    print("Budget Meal Planner")
-    print("=" *50)
+# Default limits for the meal goals
+TOLERANCE = 0.10                 # allow dishes 10% leeway on calorie, protein and fat targets
+NO_ERROR_VALUES = ("", "none", "null", "n/a", "na", "nil", "no error", "false")
+LOW_CALORIE_MAX = 500            # calorie cap for "Low Calorie"
+HIGH_PROTEIN_MIN = 30            # protein floor (g) for "High Protein"
+HIGH_PROTEIN_MIN_RATIO = 0.25    # protein must supply >= 25% of calories
+PROTEIN_KCAL_PER_GRAM = 4        # 1 g of protein = 4 kcal
+FAT_KCAL_PER_GRAM = 9            # 1 g of fat = 9 kcal
 
-def get_name_input(name_input):
-    name_input = input(name_input)
-    if name_input.lower() == "quit":
-        return "quit"
-    else:
-        return name_input
-
-# budget,
-def get_budget_input(budget_input):
-    budget_input = input(budget_input)
-    if budget_input.isdigit():
-        try:
-            budget_input = float(budget_input)
-            if budget_input <= 9.9:
-                print("It will be difficult to suggest meal plans with such a small budge. Please allocate more budget and try again.")
-                return
-            else:
-                return budget_input
-        except:
-            print("Error. Please enter a valid number")
-            return
-    else:
-        print("Error. Please enter a valid number")
-        return
-
-# pax per,
-def get_pax_input(pax_input):
-    pax_input = input(pax_input)
-    if pax_input.isdigit():
-        if int(pax_input) <= 0:
-            print("Error. Please enter a valid number.")
-        else:
-            return int(pax_input)
-    else:
-        print("Error. Please enter a valid number.")
-
-# dietary restrictions,
-def open_restrictions_menu():
-    selected = prompt_menu("Dietary Restrictions Menu", RESTRICTIONS, multiple=True)
-    if selected is None:
-        print("No dietary restriction selected.")
-        return ('None',)
-    print("Selected Dietary Restrictions: ", selected)
-    return selected
-
-# meal goal,
-def open_goal_menu():
-    selected = prompt_menu("Dietary Goal Menu", GOALS, multiple=False)
-    if selected is None:
-        return ('None',)
-    print("Selected Dietary Goals: ", selected)
-    return selected
-
-
-def get_calorie_count(selected_goals): 
-
-    match selected_goals:
-            case('Standard',):
-                calorie_count = 650
-                protein_count = 27
-                fat_count = 20
-                print(f"Calorie Count: {calorie_count}kcal")
-                print(f"Protein Count: {protein_count}g")
-                print(f"Fat_Count: {fat_count}g")
-
-            case('Low Calories',):
-                calorie_count = 500
-                protein_count = 22
-                fat_count = 15
-                print(f"Calorie Count: {calorie_count}kcal")
-                print(f"Protein Count: {protein_count}g")
-                print(f"Fat_Count: {fat_count}g")
-
-            case('High Protein',):
-                calorie_count = 800
-                protein_count = 35
-                fat_count = 25
-                print(f"Calorie Count: {calorie_count}kcal")
-                print(f"Protein Count: {protein_count}g")
-                print(f"Fat_Count: {fat_count}g")
-
-            case('Custom Macros',):
-
-                    while True:
-                        calorie_input = input("Enter calorie goal (kcal): ")
-                        if calorie_input.isdigit() and int(calorie_input) >= 350:
-                            calorie_count = int(calorie_input)
-                            break
-                        print("Please have at least 350kcal to recieve sufficient nutrients.\n")
-
-                    while True:
-                        protein_input = input("Enter protein goal (g): ")
-                        if protein_input.isdigit() and int(protein_input) >= 20:
-                            protein_count = int(protein_input)
-                            break
-                        print("Please have at least 20g of protein to recieve sufficient nutrients.\n")
-
-                    while True:
-                        fat_input = input("Enter fat goal (g): ")
-                        if fat_input.isdigit() and int(fat_input) >= 10:
-                            fat_count = int(fat_input)
-                            break
-                        print("Please have at least 10g of fat to recieve sufficient nutrients.\n")
-
-                    # 4. Print final confirmed targets
-                    print(f"\n--- Goals Set ---")
-                    print(f"Calorie Count: {calorie_count}kcal")
-                    print(f"Protein Count: {protein_count}g")
-                    print(f"Fat Count: {fat_count}g")
-
-            case('None',):
-                print("Since you have not selected a calorie goal, Standard will be chosen")
-                calorie_count = 550    
-                protein_count = 27
-                fat_count = 20
-                print(f"Calorie Count: {calorie_count}kcal")
-                print(f"Protein Count: {protein_count}g")
-                print(f"Fat_Count: {fat_count}g")                
-
-            case _:
-                print("Goal not defined. Standard will be chosen")
-                calorie_count = 550
-                protein_count = 27
-                fat_count = 20
-                print(f"Calorie Count: {calorie_count}kcal")
-                print(f"Protein Count: {protein_count}g")
-                print(f"Fat_Count: {fat_count}g")
-                     
-    return calorie_count, protein_count, fat_count
-
-#Cuisine
-def open_cuisine_menu():
-    selected = prompt_menu("Cuisine Menu", CUISINE, multiple=True)
-    if selected is None:
-        print("No cuisine selected. Anything will be chosen")
-        return ('Anything',)
-    print("Selected Cuisine: ", selected)
-    return selected
-
-
-# Selection Menu
-RESTRICTIONS = ("Seafood", "Nuts", "Dairy", "Wheat", "Eggs", "Halal")
-GOALS = ("Standard", "Low Calories", "High Protein", "Custom Macros")
-CUISINE = ("Anything", "Chinese", "Malay", "Indian", "Japanese", "Thai",
-           "Korean", "Vietnamese", "Italian", "Mexican", "Western")
-
-def prompt_menu(title, options, multiple):
-    print(f"\n------[{title}]------")
-    for i, item in enumerate(options, 1):
-        print(f"{i}. {item}")
-
-    if multiple:
-        prompt = "Enter number(s) separated by commas (or press Enter to skip): "
-    else:
-        prompt = "Enter a number (or press Enter to skip): "
-
-    while True:
-        raw = input(prompt).strip()
-
-        if raw == "":
-            return None
-
-        parts = [p.strip() for p in raw.split(",") if p.strip()]
-
-        valid = bool(parts) and all(
-            p.isdigit() and 1 <= int(p) <= len(options) for p in parts
-        )
-        if not valid:
-            print(f"Error. Please enter number(s) between 1 and {len(options)}.")
-            continue
-
-        if not multiple and len(parts) > 1:
-            print("Error. Please choose only one option.")
-            continue
-
-        indexes = sorted(set(int(p) - 1 for p in parts))
-        return tuple(options[i] for i in indexes)
-
-# country/currency,
-def get_country_input(country_input):
-    country_input = input(country_input)
-    if country_input.isdigit():
-        print("Error, invalid. Please enter a valid country.")
-        return "country_error"
-    else:
-        try:
-            country_validation =  (pycountry.countries.get(name=country_input)
-                                    or pycountry.countries.get(official_name=country_input)
-                                    or pycountry.countries.get(alpha_2=country_input.upper())
-                                    or pycountry.countries.get(alpha_3=country_input.upper()))
-            if country_validation:
-                return country_validation.name
-            else:
-                print("Error, invalid. Please enter a valid country.")
-                return "country_error"
-        except LookupError:
-            print("Error, country not found. Please enter a valid country.")
-            return "country_error"
-
-def main_input():
-    while True:
-        
-        name_input = get_name_input("Enter name (Enter 'quit' to quit): ").strip()
-        if not name_input:
-            print("Name cannot be empty. Please try again.")
-            continue
-        if name_input == "quit":
-            break
-        else:
-            print("Welcome: ", name_input)
-
-        while True:
-            budget_input = get_budget_input("Enter Budget (Min $10.0): ")
-            if isinstance(budget_input, float):
-                print("Your budget is:", budget_input)
+def parse_number(value):
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return float(value)
+    if isinstance(value, str):
+        number = ""
+        for char in value.replace(",", ""):       # "1,200 kcal" -> "1200 kcal"
+            if char.isdigit():
+                number += char
+            elif char == "." and "." not in number:  # allows ".5"
+                number += char
+            elif number.strip(".") != "":            # a number has been read, stop
                 break
-
-        while True:
-            pax_input = get_pax_input("Enter Pax: ")
-            if isinstance(pax_input, int):
-                print("Number of pax: ", pax_input)
-                break
-
-        selected_restrictions = open_restrictions_menu()
-        
-        selected_cuisine = open_cuisine_menu()
-
-        selected_goals = open_goal_menu()
-
-        calorie_count, protein_count, fat_count = get_calorie_count(selected_goals)
-
-        while True:
-            country_input = get_country_input("\nEnter country: ")
-            if not country_input == "country_error":
-                print("Selected Country: ", country_input)
-                break
-
-        combined_input = [name_input, budget_input, pax_input, selected_restrictions, selected_goals, calorie_count, selected_cuisine, country_input, protein_count, fat_count]
-        all_input = (combined_input)
-
-        print()
-        print("         MEAL PLANNER PROFILE SEARCH        ")
-        print("="*40)
-        print(f"User Name: {name_input}")
-        print(f"Total Budget: ${budget_input:.2f}")
-        print(f"Number of Pax: {pax_input}")
-        print(f"Dietary Restrictions: {selected_restrictions}")
-        print(f"Cuisine: {selected_cuisine}")
-        print(f"Dietary Goal: {selected_goals}")
-        print(f"Calories: {calorie_count} kcal")
-        print(f"Protein: {protein_count} g")
-        print(f"Fats: {fat_count} g")
-        print(f"Target Country: {country_input}")
-        print("="*40)
-        return all_input
-
-def main_menu():
-    print("\nMain Menu")
-    print("-" * 30)
-    print("1. Generate Meal Plan\n2. Manage Meal Plans\n3. Exit")
-
-    while True:
-        choice = input("\nPlease select an option (1-3): ").strip()
-
-        if choice.isdigit() and 1 <= int(choice) <= 3:
-            return int(choice)
-
-        print("Invalid choice. Please select 1-3.")
-
-
-
-
-def display_generated_meal_plan(user_input, ai_output):
-
-    print()
-    print(f"Meal Plan for {user_input[0]}")
-    print("-" * 30)
-
-
-    print(f"\nBudget: ${user_input[1]:.2f}")
-    print(f"Pax: {user_input[2]}")
-    print(f"Dietary Restrictions: {user_input[3]}")
-    print(f"Dietary Goal: {user_input[4]}")
-    print(f"Calories: {user_input[5]} kcal")
-    print(f"Protein: {user_input[8]} g")
-    print(f"Fats: {user_input[9]} g")
-    print(f"Cuisine: {user_input[6]}")
-    print(f"Country: {user_input[7]}")
-   
-
-
-    print(f"\nTotal Grocery Cost: ${ai_output['Total_grocery_cost']:.2f}")
-
-    print("\nIngredient List:")
-
-    for ingredient in ai_output["Grocery_list"]:
-        print(
-            f"- {ingredient['ingredient_name']} "
-            f"({ingredient['Quantity']} - "
-            f"${ingredient['Price_per_ingredient']:.2f})"
-        )
-
-    print("\nRecipes:")
-
-    for i, recipe in enumerate(ai_output["Dishes"], 1):
-        print(
-            f"{i}. {recipe['dish_name']} "
-            f"[{recipe['cuisine']}] - "
-            f"Est. Price: ${recipe['price_per_meal']:.2f}"
-        )
-
-
-
-def display_meal_plan(plan):
-
-    print()
-    print(f"Meal Plan for {plan['name']}")
-    print("-" * 30)
-
-    print(f"Total Grocery Cost: ${plan['Total_grocery_cost']:.2f}")
-
-    print("\nIngredient List:")
-
-    for ingredient in plan["Grocery_list"]:
-        print(
-            f"- {ingredient['ingredient_name']} "
-            f"({ingredient['Quantity']} - "
-            f"${ingredient['Price_per_ingredient']:.2f})"
-        )
-
-    print("\nRecipes:")
-
-    for i, recipe in enumerate(plan["Dishes"], 1):
-        print(
-            f"{i}. {recipe['dish_name']} "
-            f"[{recipe['cuisine']}] - "
-            f"Est. Price: ${recipe['price_per_meal']:.2f}"
-        )
-
-def display_all_plans(meal_plans):
-    print("-" * 30)
-    print("Saved Meal Plans")
-    print("-" * 30)
-
-    with open(meal_plans, "r") as file:
-        plans = json.load(file)
-
-        for plan in plans:
-            print(
-                f"{plan.get('id', 'N/A')}: Meal Plan for {plan.get('name', 'N/A')} "
-                f"({plan.get('pax', 'N/A')} pax) - "
-                f"${plan.get('Total_grocery_cost', 'N/A'):.2f} "
-                f"[{plan.get('date', 'N/A')}]"
-            )
-
-
-def get_selected_plan(meal_plans):
-    with open(meal_plans, "r") as file:
-        plans = json.load(file)
-
-    while True:
-        choice = input(
-            "\nEnter the ID of the meal plan you want to edit/delete/view "
-            "(or 'back' to return to the main menu): "
-        )
-
-        if choice.lower() == "back":
-            return None
-
-        if choice.isdigit():
-            choice = int(choice)
-
-            for plan in plans:
-                if plan.get('id') == choice:
-                    return plan
-
-        print("\nInvalid input. Please enter a valid ID.")
-
-
-def display_recipe_details(recipe):
-    print()
-    print("-" * 30)
-    print(f"Recipe: {recipe['dish_name']} ({recipe['cuisine']})")
-    print("-" * 30)
-    print(f"Ingredients: {recipe['ingredients']}")
-    print(f"Calories: {recipe['calorie_count_per_meal_output']}")
-    print(f"Protein: {recipe['protein_count_per_meal_output']}")
-    print(f"Fats: {recipe['fats_count_per_meal']}")
-    print(f"Estimated Price: ${recipe['price_per_meal']:.2f}")
-    print("\nInstructions:")
-
-    instructions = re.split(r"(?=\d+\.\s)", recipe["recipe"])
-
-    for instruction in instructions:
-        if instruction.strip():
-            print(instruction.strip())
-
-
-def get_selected_recipe(plan):
-    while True:
-        choice = input(
-            "\nEnter the number of the recipe you want to view "
-            "(or 'print' to print the entire grocery list or 'back' to return to the meal plan): "
-        )
-
-        if choice.lower() == "back":
-            return False
-        elif choice.lower() == "print":
-            pdfmaker.makepdf(plan)
-            return False
-        if choice.isdigit() and 1 <= int(choice) <= len(plan["Dishes"]):
-            display_recipe_details(plan["Dishes"][int(choice) - 1])
-        else:
-            print("\nInvalid input. Please enter a valid number.")
-            
-def  manage_plans_menu():
-    print("\nManage Meal Plans")
-    print("-" * 50)
-    print("1. View All Plans")
-    print("2. Filter by Name")
-    print("3. Filter by Budget")
-    print("4. Rename Meal Plan")
-    print("5. Delete Meal Plan")
-    print("6. Back to Main Menu")
-
-    choice = input("\nPlease select an option (1-6): ")
-
-    if choice.isdigit() and 1 <= int(choice) <= 6:
-        return int(choice)
-
-    print("Invalid choice. Please select 1-6.")
+            else:                                    # a lone "." (e.g. "kcal. 500"), discard it
+                number = ""
+        if number.strip(".") != "":
+            return float(number)
     return None
 
+# Reasonability check for Custom Macros targets.
+# Protein and fat contain calories, so together they cannot add up to more than the calorie goal.
+# Returns (True, "") if the targets are possible, or (False, message) if they are not.
+def check_macro_targets(calories, protein, fat):
+    calories = parse_number(calories)
+    protein = parse_number(protein)
+    fat = parse_number(fat)
+    if calories is None or protein is None or fat is None:
+        return True, ""     # a target is missing, so there is nothing to compare
 
+    macro_calories = protein * PROTEIN_KCAL_PER_GRAM + fat * FAT_KCAL_PER_GRAM
+    if macro_calories > calories:
+        return False, (f"Your protein ({protein:g}g) and fat ({fat:g}g) targets add up to "
+                       f"{macro_calories:g} kcal, which is more than your calorie goal of "
+                       f"{calories:g} kcal. Please lower protein or fat, or raise calories.")
+    return True, ""
 
-def display_filtered_plans(filtered_plans):
-    print("\nFiltered Saved Meal Plans")
-    print("-" * 50)
+# Budget Rule
+def check_budget_compliance(total_grocery_cost, total_budget):
+    total_grocery_cost = parse_number(total_grocery_cost)
+    total_budget = parse_number(total_budget)
+    
+    if total_budget is None or math.isnan(total_budget) or math.isinf(total_budget):
+        return {"status": "ERROR", "reason": "Budget is not a valid number."}
 
-    if not filtered_plans:
-        print("No matching meal plans found.")
-        return
+    elif total_grocery_cost is None:
+        return {"status": "ERROR", "reason": "Grocery cost not found."}
+    
+    elif total_grocery_cost > total_budget:
+        return {
+            "status": "REJECTED", 
+            "reason": f"Total grocery cost (${total_grocery_cost:.2f}) exceeds total budget (${total_budget:.2f})"
+        }
+    return {
+        "status": "ACCEPTED", 
+        "reason": f"Total grocery cost (${total_grocery_cost:.2f}) is within total budget (${total_budget:.2f})"
+    }
 
-    for plan in filtered_plans:
-        print(
-                f"{plan.get('id', 'N/A')}: Meal Plan for {plan.get('name', 'N/A')} "
-                f"({plan.get('pax', 'N/A')} pax) - "
-                f"${plan.get('Total_grocery_cost', 'N/A'):.2f} "
-                f"[{plan.get('date', 'N/A')}]"
+# Dietary Restrictions Filter
+def filter_dishes_by_dietary_rules(ai_dishes, dietary_restrictions):
+    if ai_dishes is None:
+        ai_dishes = []
+    dishes = [dish for dish in ai_dishes if isinstance(dish, dict)]
+
+    if dietary_restrictions is None:
+        dietary_restrictions = ()
+    elif isinstance(dietary_restrictions, str):
+        dietary_restrictions = (dietary_restrictions,)
+
+    restrictions = [r.strip().lower() for r in dietary_restrictions if r.strip().lower() != "none"]
+
+    matching = []
+    flagged = []
+    if not restrictions:
+        matching = dishes
+    else:
+        for dish in dishes:
+            name = dish.get("dish_name")
+            # Check the dish name too, e.g. "Pork Bolognese"
+            text = f"{dish.get('dish_name') or ''} {dish.get('ingredients') or ''}".lower()
+
+            found = []
+            for restriction in restrictions:
+                check_text = text
+                for safe_phrase in RESTRICTION_EXCEPTIONS.get(restriction, []):
+                    check_text = check_text.replace(safe_phrase, " ")
+                # Unknown restrictions fall back to matching the restriction word itself
+                for keyword in RESTRICTED_KEYWORDS.get(restriction, [restriction]):
+                    # whole word, with optional plural: "egg" matches "eggs" but not "eggplant"
+                    if re.search(r"\b" + re.escape(keyword) + r"(e?s)?\b", check_text):
+                        found.append(f"{keyword} ({restriction})")
+
+            if found:
+                flagged.append({
+                    "dish_name": name,
+                    "reason": f"Dish contains restricted ingredients: {', '.join(found)}"
+                })
+            else:
+                matching.append(dish)
+
+    # If every dish breaks a restriction, NO dish is safe (never fall back to unsafe dishes)
+    return {
+        "valid_dishes": matching,
+        "valid_dish_names": [dish.get("dish_name") for dish in matching],
+        "flagged_dishes": flagged,
+    }
+
+# Macro & Nutritional Rules (Multi-Condition Rule)
+def filter_dishes_by_nutrition(ai_dishes, meal_goal, target_cal=None,
+                               target_protein=None, target_fat=None):
+    # Each goal switches on only its own rule (None = rule is off)
+    max_cal = None
+    min_protein = None
+    max_fat = None
+    min_ratio = None
+
+    # Accept "Low Calories", ("Low Calories",), "low calorie", etc.
+    if isinstance(meal_goal, (tuple, list)):
+        meal_goal = meal_goal[0] if meal_goal else None
+    goal = str(meal_goal).strip().lower() if meal_goal is not None else "none"
+
+    if goal in ("low calorie", "low calories"):
+        # Low Calories: calorie limit only
+        max_cal = target_cal if target_cal is not None else LOW_CALORIE_MAX
+    elif goal == "high protein":
+        # High Protein: protein minimum and protein share of calories only
+        min_protein = target_protein if target_protein is not None else HIGH_PROTEIN_MIN
+        min_ratio = HIGH_PROTEIN_MIN_RATIO
+    elif goal in ("custom macros", "custom"):
+        # Custom Macros: the user's own calorie, protein and fat targets
+        max_cal = target_cal
+        min_protein = target_protein
+        max_fat = target_fat
+    # "Standard", no goal, or anything else: no nutrition limits
+
+    # 10% leeway: calories and fat may be 10% over, protein 10% under
+    if max_cal is not None:
+        max_cal = max_cal * (1 + TOLERANCE)
+    if min_protein is not None:
+        min_protein = min_protein * (1 - TOLERANCE)
+    if max_fat is not None:
+        max_fat = max_fat * (1 + TOLERANCE)
+
+    valid_dishes = []
+    flagged_dishes = []
+
+    if ai_dishes is None:
+        ai_dishes = []
+    for dish in ai_dishes:
+        if not isinstance(dish, dict):
+            flagged_dishes.append({"dish_name": "Unknown dish", "reason": "Dish data is malformed"})
+            continue
+
+        name = dish.get("dish_name")
+        calories = parse_number(dish.get("calorie_count_per_meal_output"))
+        protein = parse_number(dish.get("protein_count_per_meal_output"))
+        fat = parse_number(dish.get("fats_count_per_meal"))
+        reasons = []
+
+        # Only require the values a rule actually uses (calories are always needed)
+        missing = []
+        if calories is None:
+            missing.append("calories")
+        if protein is None and (min_protein is not None or min_ratio is not None):
+            missing.append("protein")
+        if fat is None and max_fat is not None:
+            missing.append("fat")
+
+        if missing:
+            reasons.append("Missing or unreadable nutrition data: " + ", ".join(missing))
+        else:
+            # Condition A: calorie cap
+            if max_cal is not None and calories > max_cal:
+                reasons.append(f"Calories ({calories:g} kcal) exceed target ({max_cal:.0f} kcal)")
+            # Condition B: protein floor
+            if min_protein is not None and protein < min_protein:
+                reasons.append(f"Protein ({protein:g}g) below target ({min_protein:g}g)")
+            # Condition C: fat cap
+            if max_fat is not None and fat > max_fat:
+                reasons.append(f"Fat ({fat:g}g) exceeds target ({max_fat:g}g)")
+            # Condition D: macro balance for the chosen goal
+            if min_ratio is not None and calories > 0:
+                ratio = (protein * PROTEIN_KCAL_PER_GRAM) / calories
+                if ratio < min_ratio:
+                    reasons.append(f"Protein provides only {ratio:.0%} of calories "
+                                f"(goal needs {min_ratio:.0%})")
+
+        if reasons:
+            flagged_dishes.append({"dish_name": name, "reason": "; ".join(reasons)})
+        else:
+            valid_dishes.append(dish)
+
+    return {
+        "flagged_dishes": flagged_dishes,
+        "valid_dishes": valid_dishes,
+        "valid_dish_names": [dish.get("dish_name") for dish in valid_dishes],
+    }
+
+# Preference Rules
+def filter_dishes_by_cuisine(ai_dishes, preferred_cuisines):
+    if ai_dishes is None:
+        ai_dishes = []
+    dishes = [dish for dish in ai_dishes if isinstance(dish, dict)]
+
+    if preferred_cuisines is None:
+        preferred_cuisines = ()
+    elif isinstance(preferred_cuisines, str):
+        preferred_cuisines = (preferred_cuisines,)
+
+    preferences = []
+    for c in preferred_cuisines:
+        preferences.append(c.strip().lower())
+
+    matching = []
+    flagged = []
+    if not preferences or "anything" in preferences:
+        matching = dishes
+    else:
+        for dish in dishes:
+            cuisine = str(dish.get("cuisine")).strip()
+            if cuisine.lower() in preferences:
+                matching.append(dish)
+            else:
+                flagged.append({"dish_name": dish.get("dish_name"),"reason": f"Cuisine '{cuisine}' not in preferences"})
+                
+    if len(matching) == 0 and len(dishes) > 0:
+        return {
+            "fallback_used": True,
+            "valid_dishes": dishes,
+            "valid_dish_names": [d.get("dish_name") for d in dishes],
+            "flagged_dishes": [],   # these dishes are shown, so don't list them as flagged
+        }
+    return {
+        "fallback_used": False,
+        "valid_dishes": matching,
+        "valid_dish_names": [d.get("dish_name") for d in matching],
+        "flagged_dishes": flagged,
+    }
+
+# Turn a name into a set of singular words: "Fresh Eggs" -> {"fresh", "egg"}
+def singular_words(text):
+    words = set()
+    for word in re.findall(r"[a-z]+", str(text).lower()):
+        if word.endswith("ies") and len(word) > 4:
+            word = word[:-3] + "y"           # berries -> berry
+        elif word.endswith("oes") and len(word) > 4:
+            word = word[:-2]                 # tomatoes -> tomato
+        elif word.endswith("s") and not word.endswith("ss") and len(word) > 3:
+            word = word[:-1]                 # eggs -> egg, onions -> onion
+        words.add(word)
+    return words
+
+# Grocery list filter: keep only ingredients used by the remaining dishes
+def filter_grocery_list(grocery_list, valid_dishes):
+    # Collect every ingredient used by the dishes that passed, as word sets
+    used = []
+    for dish in valid_dishes:
+        for ing in str(dish.get("ingredients") or "").split(","):
+            ing_words = singular_words(ing)
+            if ing_words:
+                used.append(ing_words)
+
+    kept_items = []
+    removed_items = []
+    for item in grocery_list or []:
+        if not isinstance(item, dict):
+            continue
+        name_words = singular_words(item.get("ingredient_name", ""))
+
+        # Match either way round, ignoring plurals:
+        # "garlic" matches "Garlic and Onion Pack", "Egg" matches "Fresh Eggs",
+        # "Chicken Breast Fillet" matches "Chicken Breast"
+        is_used = False
+        for ing_words in used:
+            if name_words and (ing_words <= name_words or name_words <= ing_words):
+                is_used = True
+                break
+
+        if is_used:
+            kept_items.append(item)
+        else:
+            removed_items.append(item.get("ingredient_name"))
+
+    new_cost = 0.0
+    for item in kept_items:
+        new_cost += parse_number(item.get("Price_per_ingredient")) or 0.0
+
+    return {
+        "grocery_list": kept_items,
+        "removed_items": removed_items,
+        "total_cost": round(new_cost, 2),
+    }
+
+def process_ai_response(ai_output, user_input):
+    # Step 1: The AI manager returns JSON as text, so convert it to a dictionary.
+    if isinstance(ai_output, str):
+        try:
+            ai_output = json.loads(ai_output)
+        except json.JSONDecodeError:
+            ai_output = {"Error": ai_output}
+ 
+    # Step 2: Start with a rejected plan. It only improves if every check passes.
+    plan = {
+        "pax": 0,
+        "Error": "",
+        "Total_grocery_cost": 0,
+        "Grocery_list": [],
+        "Dishes": [],
+        "outcome": "REJECTED",
+        "warnings": [],
+        "flagged_dishes": [],
+    }
+ 
+    # Custom Macros: make sure the user's targets are actually possible
+    macro_ok, macro_error = True, ""
+    if isinstance(user_input, dict):
+        goal_name = str(user_input.get("Meal_goal") or "").strip().lower()
+        if goal_name in ("custom macros", "custom"):
+            macro_ok, macro_error = check_macro_targets(
+                user_input.get("Calorie_count_per_meal_input"),
+                user_input.get("Protein_per_meal_input"),
+                user_input.get("Fats_per_meal"),
             )
-       
 
-def get_selected_filtered_plan(filtered_plans):
-    if not filtered_plans:
-        print("No meal plans available to select.")
+    # Step 3: Check the data, then run the rules
+    if not isinstance(ai_output, dict) or not isinstance(user_input, dict):
+        plan["Error"] = "Invalid data passed to the logic manager"
+
+    elif not macro_ok:
+        plan["Error"] = macro_error
+ 
+    elif str(ai_output.get("Error") or "").strip().lower() not in NO_ERROR_VALUES:
+        plan["Error"] = str(ai_output["Error"]).strip()
+ 
+    elif not isinstance(ai_output.get("Dishes"), list) or len(ai_output["Dishes"]) == 0:
+        plan["Error"] = "The AI returned no dishes"
+ 
+    else:
+        dishes = [dish for dish in ai_output["Dishes"] if isinstance(dish, dict)]
+
+        # Pax: use the user's number, warn if the AI planned for a different number
+        user_pax = parse_number(user_input.get("Pax"))
+        ai_pax = parse_number(ai_output.get("pax"))
+        plan["pax"] = int(user_pax) if user_pax else (int(ai_pax) if ai_pax else 0)
+        if user_pax and ai_pax and user_pax != ai_pax:
+            plan["warnings"].append(
+                f"The AI planned for {ai_pax:g} pax but you asked for {user_pax:g}"
+            )
+
+        # Filter 1: dietary safety (uses the dish objects directly, not names)
+        diet = filter_dishes_by_dietary_rules(dishes, user_input.get("Dietary_restrictions"))
+        safe_dishes = diet["valid_dishes"]
+
+        # Filter 2: nutrition (multi-condition rule)
+        nutrition = filter_dishes_by_nutrition(
+            safe_dishes,
+            user_input.get("Meal_goal"),
+            user_input.get("Calorie_count_per_meal_input"),
+            user_input.get("Protein_per_meal_input"),
+            user_input.get("Fats_per_meal"),
+        )
+
+        # Filter 3: cuisine preference
+        cuisine = filter_dishes_by_cuisine(nutrition["valid_dishes"], user_input.get("Cuisine"))
+        if cuisine["fallback_used"]:
+            plan["warnings"].append("No dishes matched your preferred cuisine, so other cuisines are shown")
+
+        valid_dishes = cuisine["valid_dishes"]
+        plan["Dishes"] = valid_dishes
+        plan["flagged_dishes"] = diet["flagged_dishes"] + nutrition["flagged_dishes"] + cuisine["flagged_dishes"]
+
+        # Filter 4: grocery list, only ingredients for the remaining dishes
+        grocery = filter_grocery_list(ai_output.get("Grocery_list", []), valid_dishes)
+        plan["Grocery_list"] = grocery["grocery_list"]
+        plan["Total_grocery_cost"] = grocery["total_cost"]
+        if grocery["removed_items"]:
+            plan["warnings"].append("Removed unused groceries: " + ", ".join(grocery["removed_items"]))
+
+        # Budget rule, checked on the NEW cost
+        budget_result = check_budget_compliance(plan["Total_grocery_cost"], user_input.get("Total_budget"))
+
+        # Decide the outcome
+        if budget_result["status"] == "REJECTED" or budget_result["status"] == "ERROR":
+            plan["outcome"] = "REJECTED"
+            plan["Error"] = budget_result["reason"]
+        elif len(dishes) == 0 or len(valid_dishes) == 0:
+            plan["outcome"] = "REJECTED"
+            plan["Error"] = "No dishes passed all the rules"
+        elif len(valid_dishes) / len(dishes) >= 0.5:
+            plan["outcome"] = "ACCEPTED"
+        else:
+            plan["outcome"] = "FLAGGED"
+            plan["warnings"].append(
+                f"Only {len(valid_dishes)} of {len(dishes)} suggested dishes met your "
+                "requirements. You may want to regenerate for more options"
+            )
+    return plan
+
+def build_user_input_dict(user_input):
+    # Safe lookup: returns None instead of crashing if the list is too short
+    def get(index):
+        return user_input[index] if len(user_input) > index else None
+
+    goal = get(4)
+    if isinstance(goal, (tuple, list)):        # ('Standard',) → 'Standard'
+        goal = goal[0] if goal else None
+
+    # Read a target number; 0, negative or unreadable means "no target"
+    def get_target(index):
+        value = parse_number(get(index))
+        if value is None or value <= 0:
+            return None
+        return value
+
+    return {
+        "Total_budget": get(1),
+        "Pax": get(2),
+        "Dietary_restrictions": get(3),
+        "Meal_goal": goal,
+        "Calorie_count_per_meal_input": get_target(5),
+        "Protein_per_meal_input": get_target(8),
+        "Fats_per_meal": get_target(9),
+        "Cuisine": get(6),
+    }
+
+
+def get_filtered_plan(ai_output, user_input):
+    if isinstance(user_input, (list, tuple)):
+        user_input = build_user_input_dict(user_input)
+
+    plan = process_ai_response(ai_output, user_input)
+
+    # Explain every dish that was removed (dietary, nutrition and cuisine rules)
+    for flagged in plan["flagged_dishes"]:
+        print(f"Removed '{flagged['dish_name']}': {flagged['reason']}")
+
+    if plan["outcome"] == "REJECTED":
+        print("Plan rejected:", plan["Error"])
         return None
 
-    while True:
-        choice = input("\nEnter the ID of the meal plan to view, or 'back' to go back: ")
+    for w in plan["warnings"]:
+        print("Warning:", w)
 
-        if choice.lower() == "back":
-            return None
-
-        for plan in filtered_plans:
-            if str(plan.get("id")) == choice:
-                return plan
-
-        print("\nInvalid ID. Please select a plan from the displayed results.")
-
-
-def ask_regenerate():
-    while True:
-        again = input("\nDo you want to regenerate? (Yes/No): ")
-        again = again.strip().lower()
-
-        if again == "yes":
-            return True
-        elif again == "no":
-            return False
-        else:
-            print("\nInvalid input. Please enter Yes or No.")
-
-
-def change_meal_plan_name(plan):
-    print("\nChange Meal Plan Name")
-    print("-" * 30)
-    print(f"Current name: {plan.get('name', 'N/A')}")
-
-    while True:
-        new_name = input("\nEnter the new name: ").strip()
-
-        if new_name:
-            return new_name
-        else:
-            print("\nName cannot be empty. Please try again.")
-
-def delete_meal_plan(meal_plans):
-    display_all_plans(meal_plans)
-    print("\nDelete Meal Plan")
-
-    selected_plan = get_selected_plan(meal_plans)
-
-    if selected_plan is None:
-        return
-
-    print(f"\nSelected meal plan: \n{selected_plan.get('name', 'N/A')}")
-
-    while True:
-        confirm = input("\nAre you sure you want to delete this meal plan? (yes/no): ")
-        confirm = confirm.strip().lower()
-
-        if confirm == "yes":
-            import dataManager
-            dataManager.delete_meal_plan(selected_plan["id"])
-            return
-
-        elif confirm == "no":
-            print("\nDeletion cancelled.")
-            return
-
-        else:
-            print("\nInvalid input. Please enter Yes or No.")
-            
-
-def get_name_filter():
-    return input("\nEnter the name to search for: ").strip()
-
-
-def get_budget_filter():
-    while True:
-        try:
-            budget = float(input("\nEnter the budget to filter by: $"))
-
-            if budget < 0:
-                print("\nBudget cannot be negative.")
-            else:
-                return budget
-
-        except ValueError:
-            print("\nInvalid budget. Please enter a number.")
-
-
-PLAN_KEYS = ("pax", "Total_grocery_cost", "Grocery_list", "Dishes")
-
-def get_accept_reject_menu(plan, dish_selection_prompt, user_input, dataManager):
-    if not isinstance(plan, dict):
-        plan = {}
-
-    dishes = [dish for dish in plan.get("Dishes", []) if isinstance(dish, dict)]
-
-    while True:
-
-        dish_selection = input(dish_selection_prompt).strip().lower()
-
-        if dish_selection == 'y':
-
-            plan_to_save = {key: plan[key] for key in PLAN_KEYS if key in plan}
-            saved_successfully = dataManager.save_record(user_input, plan_to_save)
-
-            if saved_successfully:
-                print("Record saved successfully!")
-            else:
-                print("Warning: Failed to save the record data.")
-
-            try:
-                selected_dish_idx = int(input("\nEnter the number of the dish to view its recipe: "))
-                if 1 <= selected_dish_idx <= len(dishes):
-                    dish = dishes[selected_dish_idx - 1]
-                    print(f"\n--- Recipe for {dish.get('dish_name')} ---")
-                    print(f"Ingredients: {dish.get('ingredients', 'Ingredients not found')}")
-                    instructions = re.split(r"(?=\d+\.\s)", dish["recipe"])
-                    for instruction in instructions:
-                        if instruction.strip():
-                            print(instruction.strip())
-                else:
-                    print("Invalid dish number.")
-            except ValueError:
-                print("Please enter a valid number.")
-
-            print("Thank you for using our service.")
-            return 'y', plan_to_save, dishes
-
-        elif dish_selection == 'n':
-            print("We are sorry for the inconvenience.")
-            ingredient_exclude = input("What would you like excluded? ")
-            print("Excluded: ", ingredient_exclude)
-            return 'n', None, ingredient_exclude
-
-        else:
-            print("Error. Please select y/n.")
+    return plan
