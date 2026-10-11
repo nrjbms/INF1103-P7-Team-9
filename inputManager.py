@@ -302,9 +302,9 @@ def display_generated_meal_plan(user_input, ai_output):
     print(f"Pax: {user_input[2]}")
     print(f"Dietary Restrictions: {user_input[3]}")
     print(f"Dietary Goal: {user_input[4]}")
-    print(f"Calories: {user_input[5]} kcal")
-    print(f"Protein: {user_input[8]} g")
-    print(f"Fats: {user_input[9]} g")
+    print(f"Calories: {show_target(user_input[5], ' kcal')}")
+    print(f"Protein: {show_target(user_input[8], ' g')}")
+    print(f"Fats: {show_target(user_input[9], ' g')}")
     print(f"Cuisine: {user_input[6]}")
     print(f"Country: {user_input[7]}")
    
