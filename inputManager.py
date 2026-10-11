@@ -360,7 +360,7 @@ def get_selected_plan(meal_plans):
 
     while True:
         choice = input(
-            "\nEnter the ID of the meal plan you want to edit/view "
+            "\nEnter the ID of the meal plan you want to edit/delete/view "
             "(or 'back' to return to the main menu): "
         )
 
@@ -496,6 +496,7 @@ def change_meal_plan_name(plan):
 
 def delete_meal_plan(meal_plans):
     display_all_plans(meal_plans)
+    print("\nDelete Meal Plan")
 
     selected_plan = get_selected_plan(meal_plans)
 
