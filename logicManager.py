@@ -4,7 +4,7 @@ import re
 from dietaryRules import RESTRICTED_KEYWORDS, RESTRICTION_EXCEPTIONS
 
 # Default limits for the meal goals
-CALORIE_TOLERANCE = 0.10         # allow dishes to be up to 10% over the per-meal target
+TOLERANCE = 0.10                 # allow dishes 10% leeway on calorie, protein and fat targets
 NO_ERROR_VALUES = ("", "none", "null", "n/a", "na", "nil", "no error", "false")
 LOW_CALORIE_MAX = 500            # calorie cap for "Low Calorie"
 HIGH_PROTEIN_MIN = 30            # protein floor (g) for "High Protein"
@@ -114,14 +114,20 @@ def filter_dishes_by_nutrition(ai_dishes, meal_goal, target_cal=None,
 
     if goal in ("low calorie", "low calories"):
         cap = target_cal if target_cal is not None else LOW_CALORIE_MAX
-        max_cal = cap * (1 + CALORIE_TOLERANCE)
+        max_cal = cap * (1 + TOLERANCE)
     elif goal == "high protein":
         if min_protein is None:
             min_protein = HIGH_PROTEIN_MIN
         min_ratio = HIGH_PROTEIN_MIN_RATIO
     elif target_cal is not None:
         # "Standard" or "Custom": don't go over the per-meal target
-        max_cal = target_cal * (1 + CALORIE_TOLERANCE)
+        max_cal = target_cal * (1 + TOLERANCE)
+
+    # Same 10% leeway for protein and fat: protein may be 10% under, fat 10% over
+    if min_protein is not None:
+        min_protein = min_protein * (1 - TOLERANCE)
+    if max_fat is not None:
+        max_fat = max_fat * (1 + TOLERANCE)
 
     valid_dishes = []
     flagged_dishes = []
@@ -153,7 +159,7 @@ def filter_dishes_by_nutrition(ai_dishes, meal_goal, target_cal=None,
         else:
             # Condition A: calorie cap
             if max_cal is not None and calories > max_cal:
-                reasons.append(f"Calories ({calories:g} kcal) exceed target ({max_cal:g} kcal)")
+                reasons.append(f"Calories ({calories:g} kcal) exceed target ({max_cal:.0f} kcal)")
             # Condition B: protein floor
             if min_protein is not None and protein < min_protein:
                 reasons.append(f"Protein ({protein:g}g) below target ({min_protein:g}g)")
