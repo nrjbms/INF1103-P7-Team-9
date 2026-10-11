@@ -373,18 +373,21 @@ def build_user_input_dict(user_input):
     if isinstance(goal, (tuple, list)):        # ('Standard',) → 'Standard'
         goal = goal[0] if goal else None
 
-    per_meal_cal = parse_number(get(5))
-    if per_meal_cal is not None and per_meal_cal <= 0:
-        per_meal_cal = None
+    # Read a target number; 0, negative or unreadable means "no target"
+    def get_target(index):
+        value = parse_number(get(index))
+        if value is None or value <= 0:
+            return None
+        return value
 
     return {
         "Total_budget": get(1),
         "Pax": get(2),
         "Dietary_restrictions": get(3),
         "Meal_goal": goal,
-        "Calorie_count_per_meal_input": per_meal_cal,
-        "Protein_per_meal_input": parse_number(get(8)),
-        "Fats_per_meal": parse_number(get(9)),
+        "Calorie_count_per_meal_input": get_target(5),
+        "Protein_per_meal_input": get_target(8),
+        "Fats_per_meal": get_target(9),
         "Cuisine": get(6),
     }
 
