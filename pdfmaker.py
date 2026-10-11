@@ -174,9 +174,3 @@ def makepdf(fileName, plan):
 
     #builds the pdf "onFirstPage" creates the header "Budget Planner"
     doc.build(story, onFirstPage=styling)
-
-
-
-
-records = inputManager.get_selected_plan("meal_history.json")
-makepdf("test1",records)
