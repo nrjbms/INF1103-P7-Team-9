@@ -101,29 +101,34 @@ def filter_dishes_by_dietary_rules(ai_dishes, dietary_restrictions):
 # Macro & Nutritional Rules (Multi-Condition Rule)
 def filter_dishes_by_nutrition(ai_dishes, meal_goal, target_cal=None,
                                target_protein=None, target_fat=None):
-    # target_cal is the per-meal calorie target from the user    
+    # Each goal switches on only its own rule (None = rule is off)
     max_cal = None
-    min_protein = target_protein
-    max_fat = target_fat
+    min_protein = None
+    max_fat = None
     min_ratio = None
 
-    # Accept "Low Calorie", ("Low Calorie",), "low calories", etc.
+    # Accept "Low Calories", ("Low Calories",), "low calorie", etc.
     if isinstance(meal_goal, (tuple, list)):
         meal_goal = meal_goal[0] if meal_goal else None
     goal = str(meal_goal).strip().lower() if meal_goal is not None else "none"
 
     if goal in ("low calorie", "low calories"):
-        cap = target_cal if target_cal is not None else LOW_CALORIE_MAX
-        max_cal = cap * (1 + TOLERANCE)
+        # Low Calories: calorie limit only
+        max_cal = target_cal if target_cal is not None else LOW_CALORIE_MAX
     elif goal == "high protein":
-        if min_protein is None:
-            min_protein = HIGH_PROTEIN_MIN
+        # High Protein: protein minimum and protein share of calories only
+        min_protein = target_protein if target_protein is not None else HIGH_PROTEIN_MIN
         min_ratio = HIGH_PROTEIN_MIN_RATIO
-    elif target_cal is not None:
-        # "Standard" or "Custom": don't go over the per-meal target
-        max_cal = target_cal * (1 + TOLERANCE)
+    elif goal in ("custom macros", "custom"):
+        # Custom Macros: the user's own calorie, protein and fat targets
+        max_cal = target_cal
+        min_protein = target_protein
+        max_fat = target_fat
+    # "Standard", no goal, or anything else: no nutrition limits
 
-    # Same 10% leeway for protein and fat: protein may be 10% under, fat 10% over
+    # 10% leeway: calories and fat may be 10% over, protein 10% under
+    if max_cal is not None:
+        max_cal = max_cal * (1 + TOLERANCE)
     if min_protein is not None:
         min_protein = min_protein * (1 - TOLERANCE)
     if max_fat is not None:
