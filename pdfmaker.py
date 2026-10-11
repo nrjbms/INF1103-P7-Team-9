@@ -73,6 +73,8 @@ def styling(canvas, doc):
 def makepdf(plan):
     #sets the file name
     fileName = input("What would you like to name the file: ")
+
+    #check if file name is valid
     validName = False
     while(validName == False):
         if re.search(invalid_filename, fileName):
