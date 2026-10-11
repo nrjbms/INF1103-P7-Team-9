@@ -256,7 +256,7 @@ def main_input():
 def main_menu():
         print("\nMain Menu")
         print("-" * 30)
-        print("1. Generate Meal Plan\n2. View Saved Meal Plans\n2. View Saved Meal Plans\n3. Change Meal Plan Name\n4. Exit")
+        print("1. Generate Meal Plan\n2. View Saved Meal Plans\n3. Change Meal Plan Name\n4. Exit")
 
         choice = input("\nPlease select an option (1-4): ")
 
