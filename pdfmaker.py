@@ -178,10 +178,11 @@ def makepdf(plan):
 
         #list out the list of recipe instructions for individual dish
         story.append(Paragraph("Instructions", heading2))
-        raw_steps = [s.strip() for s in recipe.split(".") if s.strip()]
-        for i, step in enumerate(raw_steps, start=1):
-            story.append(Paragraph(f"{i}. {step}.", standard_font))
-            standard_space
+        instructions = re.split(r"(?=\d+\.\s)", recipe)
+        for instruction in instructions:
+            if instruction.strip():
+                story.append(Paragraph(instruction.strip(), standard_font))
+                story.append(standard_space)
 
     #builds the pdf "onFirstPage" creates the header "Budget Planner"
     doc.build(story, onFirstPage=styling)
