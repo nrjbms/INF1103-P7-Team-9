@@ -122,6 +122,7 @@ def is_valid_amount(value):
 
     try:
         amount = float(value)
+
     except (TypeError, ValueError, OverflowError):
         return False
 
@@ -129,8 +130,17 @@ def is_valid_amount(value):
 
 
 # Save an accepted meal plan into meal_history.json
-# Felix's user_input structure: [0] name,[1] budget, [2] pax, [3] dietary restrictions, [4] dietary goal, [5] calorie count, [6] cuisine, [7] country, [8] protein count, [9] fat count
-
+# Felix's user_input structure:
+# [0] name
+# [1] budget
+# [2] pax
+# [3] dietary restrictions
+# [4] dietary goal
+# [5] calorie count
+# [6] cuisine
+# [7] country
+# [8] protein count
+# [9] fat count
 def save_record(user_input, meal_plan):
 
     # Validate input structure
@@ -201,7 +211,7 @@ def save_record(user_input, meal_plan):
     # Add the new meal plan
     records.append(record)
 
-    # Save all records
+    # Save all records safely
     return save_records(records)
 
 
@@ -218,6 +228,7 @@ def get_all_records():
 
 
 # Retrieve a saved meal plan using its ID
+# Return None if the ID does not exist
 def get_record_by_id(record_id):
 
     records = load_records()
@@ -226,6 +237,7 @@ def get_record_by_id(record_id):
         return None
 
     for record in records:
+
         if str(record.get("id")) == str(record_id):
             return record
 
@@ -233,7 +245,7 @@ def get_record_by_id(record_id):
 
 
 # Search saved meal plans using a keyword
-# Search across names, cuisines, ingredients and dishes
+# Search across all saved record information
 def search_records(search_word):
 
     records = load_records()
@@ -265,6 +277,7 @@ def search_records(search_word):
 
 
 # Filter saved meal plans by maximum grocery cost
+# Return plans with a total cost within the given budget
 def filter_by_budget(max_budget):
 
     records = load_records()
@@ -284,6 +297,7 @@ def filter_by_budget(max_budget):
         cost = record.get("Total_grocery_cost")
 
         if is_valid_amount(cost):
+
             if float(cost) <= max_budget:
                 results.append(record)
 
@@ -328,17 +342,20 @@ def filter_by_name(name):
 # Update the name of a saved meal plan using its ID
 def update_meal_plan_name(plan_id, new_name):
 
+    # Validate new name
     if not isinstance(new_name, str):
         return False
 
     if not new_name.strip():
         return False
 
+    # Load existing records
     records = load_records()
 
     if records is None:
         return False
 
+    # Find and update matching record
     for plan in records:
 
         if str(plan.get("id")) == str(plan_id):
@@ -353,11 +370,13 @@ def update_meal_plan_name(plan_id, new_name):
 # Delete a saved meal plan using its ID
 def delete_meal_plan(plan_id):
 
+    # Load existing records
     records = load_records()
 
     if records is None:
         return False
 
+    # Find and delete matching record
     for plan in records:
 
         if str(plan.get("id")) == str(plan_id):
