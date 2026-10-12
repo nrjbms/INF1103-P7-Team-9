@@ -130,17 +130,8 @@ def is_valid_amount(value):
 
 
 # Save an accepted meal plan into meal_history.json
-# Felix's user_input structure:
-# [0] name
-# [1] budget
-# [2] pax
-# [3] dietary restrictions
-# [4] dietary goal
-# [5] calorie count
-# [6] cuisine
-# [7] country
-# [8] protein count
-# [9] fat count
+# Using Felix's user_input structure:
+
 def save_record(user_input, meal_plan):
 
     # Validate input structure
