@@ -1,13 +1,13 @@
 [
     {
-        "Test Case Name": "Meal Planner: Exit Program",
+        "Test Case Name": "Exit Program",
         "Inputs": [
             "3"
         ],
         "Expected_Output": "Goodbye!"
     },
     {
-        "Test Case Name": "Meal Planner: Invalid Menu Choice",
+        "Test Case Name": "Invalid Menu Choice",
         "Inputs": [
             "s",
             "3"
@@ -15,33 +15,15 @@
         "Expected_Output": "Goodbye!"
     },
     {
-        "Test Case Name": "Meal Planner: View Saved Plans",
+        "Test Case Name": "View All Saved Meal Plans",
         "Inputs": [
             "2",
-            "b",
-            "3"
+            "1"
         ],
         "Expected_Output": "Saved Meal Plans"
     },
     {
-        "Test Case Name": "Meal Planner: Invalid Budget",
-        "Inputs": [
-            "1",
-            "Jannah",
-            "abc",
-            "50",
-            "1",
-            "",
-            "1",
-            "",
-            "1",
-            "Singapore",
-            "3"
-        ],
-        "Expected_Output": "Please enter a valid budget"
-    },
-    {
-        "Test Case Name": "Meal Planner: Invalid Pax",
+        "Test Case Name": "Invalid Pax",
         "Inputs": [
             "1",
             "Jannah",
@@ -58,12 +40,720 @@
         "Expected_Output": "Please enter a valid number"
     },
     {
-        "Test Case Name": "Meal Planner: Return to Main Menu",
+        "Test Case Name": "Main Menu: Non-numeric Choice",
         "Inputs": [
-            "2",
-            "b",
+            "abc",
+            "3"
+        ],
+        "Expected_Output": "Invalid choice. Please select 1-3."
+    },
+    {
+        "Test Case Name": "Main Menu: Zero Choice",
+        "Inputs": [
+            "0",
+            "3"
+        ],
+        "Expected_Output": "Invalid choice. Please select 1-3."
+    },
+    {
+        "Test Case Name": "Main Menu: Above Range Choice",
+        "Inputs": [
+            "4",
+            "3"
+        ],
+        "Expected_Output": "Invalid choice. Please select 1-3."
+    },
+    {
+        "Test Case Name": "Name: Empty Input",
+        "Inputs": [
+            "1",
+            "",
+            "quit",
+            "3"
+        ],
+        "Expected_Output": "Name cannot be empty. Please try again."
+    },
+    {
+        "Test Case Name": "Name: Whitespace Only",
+        "Inputs": [
+            "1",
+            "   ",
+            "quit",
+            "3"
+        ],
+        "Expected_Output": "Name cannot be empty. Please try again."
+    },
+    {
+        "Test Case Name": "Name: Quit",
+        "Inputs": [
+            "1",
+            "quit",
             "3"
         ],
         "Expected_Output": "Goodbye!"
+    },
+    {
+        "Test Case Name": "Name: Quit Uppercase",
+        "Inputs": [
+            "1",
+            "QUIT",
+            "3"
+        ],
+        "Expected_Output": "Goodbye!"
+    },
+    {
+        "Test Case Name": "Name: Valid Name",
+        "Inputs": [
+            "1",
+            "Jannah"
+        ],
+        "Expected_Output": "Welcome:  Jannah"
+    },
+    {
+        "Test Case Name": "Budget: Non-numeric",
+        "Inputs": [
+            "1",
+            "Jannah",
+            "abc"
+        ],
+        "Expected_Output": "Error. Please enter a valid number"
+    },
+    {
+        "Test Case Name": "Budget: Empty",
+        "Inputs": [
+            "1",
+            "Jannah",
+            ""
+        ],
+        "Expected_Output": "Error. Please enter a valid number"
+    },
+    {
+        "Test Case Name": "Budget: Below Minimum",
+        "Inputs": [
+            "1",
+            "Jannah",
+            "5"
+        ],
+        "Expected_Output": "It will be difficult to suggest meal plans with such a small budge. Please allocate more budget and try again."
+    },
+    {
+        "Test Case Name": "Budget: Just Below Minimum (9.9)",
+        "Inputs": [
+            "1",
+            "Jannah",
+            "9.9"
+        ],
+        "Expected_Output": "It will be difficult to suggest meal plans with such a small budge. Please allocate more budget and try again."
+    },
+    {
+        "Test Case Name": "Budget: Negative",
+        "Inputs": [
+            "1",
+            "Jannah",
+            "-20"
+        ],
+        "Expected_Output": "It will be difficult to suggest meal plans with such a small budge. Please allocate more budget and try again."
+    },
+    {
+        "Test Case Name": "Budget: Minimum Accepted (10)",
+        "Inputs": [
+            "1",
+            "Jannah",
+            "10"
+        ],
+        "Expected_Output": "Your budget is: 10.0"
+    },
+    {
+        "Test Case Name": "Pax: Non-numeric",
+        "Inputs": [
+            "1",
+            "Jannah",
+            "50",
+            "abc"
+        ],
+        "Expected_Output": "Error. Please enter a valid number."
+    },
+    {
+        "Test Case Name": "Pax: Zero",
+        "Inputs": [
+            "1",
+            "Jannah",
+            "50",
+            "0"
+        ],
+        "Expected_Output": "Error. Please enter a valid number."
+    },
+    {
+        "Test Case Name": "Pax: Negative",
+        "Inputs": [
+            "1",
+            "Jannah",
+            "50",
+            "-3"
+        ],
+        "Expected_Output": "Error. Please enter a valid number."
+    },
+    {
+        "Test Case Name": "Pax: Decimal",
+        "Inputs": [
+            "1",
+            "Jannah",
+            "50",
+            "2.5"
+        ],
+        "Expected_Output": "Error. Please enter a valid number."
+    },
+    {
+        "Test Case Name": "Pax: Valid",
+        "Inputs": [
+            "1",
+            "Jannah",
+            "50",
+            "2"
+        ],
+        "Expected_Output": "Number of pax:  2"
+    },
+    {
+        "Test Case Name": "Restrictions: Skip With Enter",
+        "Inputs": [
+            "1",
+            "Jannah",
+            "50",
+            "2",
+            ""
+        ],
+        "Expected_Output": "No dietary restriction selected."
+    },
+    {
+        "Test Case Name": "Restrictions: Multiple Valid",
+        "Inputs": [
+            "1",
+            "Jannah",
+            "50",
+            "2",
+            "1,3"
+        ],
+        "Expected_Output": "Selected Dietary Restrictions:  ('Seafood', 'Dairy')"
+    },
+    {
+        "Test Case Name": "Restrictions: Duplicates And Order Fixed",
+        "Inputs": [
+            "1",
+            "Jannah",
+            "50",
+            "2",
+            "3,1,3"
+        ],
+        "Expected_Output": "Selected Dietary Restrictions:  ('Seafood', 'Dairy')"
+    },
+    {
+        "Test Case Name": "Restrictions: Blank Part Ignored",
+        "Inputs": [
+            "1",
+            "Jannah",
+            "50",
+            "2",
+            "1,,3"
+        ],
+        "Expected_Output": "Selected Dietary Restrictions:  ('Seafood', 'Dairy')"
+    },
+    {
+        "Test Case Name": "Restrictions: Out of Range",
+        "Inputs": [
+            "1",
+            "Jannah",
+            "50",
+            "2",
+            "7"
+        ],
+        "Expected_Output": "Error. Please enter number(s) between 1 and 6."
+    },
+    {
+        "Test Case Name": "Restrictions: Non-numeric",
+        "Inputs": [
+            "1",
+            "Jannah",
+            "50",
+            "2",
+            "abc"
+        ],
+        "Expected_Output": "Error. Please enter number(s) between 1 and 6."
+    },
+    {
+        "Test Case Name": "Restrictions: One Valid One Invalid",
+        "Inputs": [
+            "1",
+            "Jannah",
+            "50",
+            "2",
+            "1,9"
+        ],
+        "Expected_Output": "Error. Please enter number(s) between 1 and 6."
+    },
+    {
+        "Test Case Name": "Cuisine: Skip With Enter",
+        "Inputs": [
+            "1",
+            "Jannah",
+            "50",
+            "2",
+            "",
+            ""
+        ],
+        "Expected_Output": "No cuisine selected. Anything will be chosen"
+    },
+    {
+        "Test Case Name": "Cuisine: Multiple Valid",
+        "Inputs": [
+            "1",
+            "Jannah",
+            "50",
+            "2",
+            "",
+            "2,4"
+        ],
+        "Expected_Output": "Selected Cuisine:  ('Chinese', 'Indian')"
+    },
+    {
+        "Test Case Name": "Cuisine: Out of Range",
+        "Inputs": [
+            "1",
+            "Jannah",
+            "50",
+            "2",
+            "",
+            "12"
+        ],
+        "Expected_Output": "Error. Please enter number(s) between 1 and 11."
+    },
+    {
+        "Test Case Name": "Cuisine: Non-numeric",
+        "Inputs": [
+            "1",
+            "Jannah",
+            "50",
+            "2",
+            "",
+            "abc"
+        ],
+        "Expected_Output": "Error. Please enter number(s) between 1 and 11."
+    },
+    {
+        "Test Case Name": "Goal: Skip With Enter",
+        "Inputs": [
+            "1",
+            "Jannah",
+            "50",
+            "2",
+            "",
+            "",
+            ""
+        ],
+        "Expected_Output": "Since you have not selected a calorie goal, Standard will be chosen"
+    },
+    {
+        "Test Case Name": "Goal: Standard",
+        "Inputs": [
+            "1",
+            "Jannah",
+            "50",
+            "2",
+            "",
+            "",
+            "1"
+        ],
+        "Expected_Output": "Selected Dietary Goals:  ('Standard',)"
+    },
+    {
+        "Test Case Name": "Goal: Low Calories Macros",
+        "Inputs": [
+            "1",
+            "Jannah",
+            "50",
+            "2",
+            "",
+            "",
+            "2"
+        ],
+        "Expected_Output": "Calorie Count: 500kcal"
+    },
+    {
+        "Test Case Name": "Goal: More Than One Option",
+        "Inputs": [
+            "1",
+            "Jannah",
+            "50",
+            "2",
+            "",
+            "",
+            "1,2"
+        ],
+        "Expected_Output": "Error. Please choose only one option."
+    },
+    {
+        "Test Case Name": "Goal: Out of Range",
+        "Inputs": [
+            "1",
+            "Jannah",
+            "50",
+            "2",
+            "",
+            "",
+            "5"
+        ],
+        "Expected_Output": "Error. Please enter number(s) between 1 and 4."
+    },
+    {
+        "Test Case Name": "Custom Macros: Calories Below 350",
+        "Inputs": [
+            "1",
+            "Jannah",
+            "50",
+            "2",
+            "",
+            "",
+            "4",
+            "349"
+        ],
+        "Expected_Output": "Please have at least 350kcal to receive sufficient nutrients."
+    },
+    {
+        "Test Case Name": "Custom Macros: Protein Below 20",
+        "Inputs": [
+            "1",
+            "Jannah",
+            "50",
+            "2",
+            "",
+            "",
+            "4",
+            "350",
+            "19"
+        ],
+        "Expected_Output": "Please have at least 20g of protein to receive sufficient nutrients."
+    },
+    {
+        "Test Case Name": "Custom Macros: Fat Below 10",
+        "Inputs": [
+            "1",
+            "Jannah",
+            "50",
+            "2",
+            "",
+            "",
+            "4",
+            "350",
+            "20",
+            "9"
+        ],
+        "Expected_Output": "Please have at least 10g of fat to receive sufficient nutrients."
+    },
+    {
+        "Test Case Name": "Custom Macros: Minimum Values Accepted",
+        "Inputs": [
+            "1",
+            "Jannah",
+            "50",
+            "2",
+            "",
+            "",
+            "4",
+            "350",
+            "20",
+            "10"
+        ],
+        "Expected_Output": "Fat Count: 10g"
+    },
+    {
+        "Test Case Name": "Country: Digits Only",
+        "Inputs": [
+            "1",
+            "Jannah",
+            "50",
+            "2",
+            "",
+            "",
+            "1",
+            "123"
+        ],
+        "Expected_Output": "Please enter a valid country."
+    },
+    {
+        "Test Case Name": "Country: Unknown Country",
+        "Inputs": [
+            "1",
+            "Jannah",
+            "50",
+            "2",
+            "",
+            "",
+            "1",
+            "Narnia"
+        ],
+        "Expected_Output": "Please enter a valid country."
+    },
+    {
+        "Test Case Name": "Country: Empty",
+        "Inputs": [
+            "1",
+            "Jannah",
+            "50",
+            "2",
+            "",
+            "",
+            "1",
+            ""
+        ],
+        "Expected_Output": "Please enter a valid country."
+    },
+    {
+        "Test Case Name": "Country: Valid Name",
+        "Inputs": [
+            "1",
+            "Jannah",
+            "50",
+            "2",
+            "",
+            "",
+            "1",
+            "Singapore"
+        ],
+        "Expected_Output": "Selected Country:  Singapore"
+    },
+    {
+        "Test Case Name": "Country: Alpha-2 Code",
+        "Inputs": [
+            "1",
+            "Jannah",
+            "50",
+            "2",
+            "",
+            "",
+            "1",
+            "sg"
+        ],
+        "Expected_Output": "Selected Country:  Singapore"
+    },
+    {
+        "Test Case Name": "Country: Alpha-3 Code",
+        "Inputs": [
+            "1",
+            "Jannah",
+            "50",
+            "2",
+            "",
+            "",
+            "1",
+            "SGP"
+        ],
+        "Expected_Output": "Selected Country:  Singapore"
+    },
+    {
+        "Test Case Name": "Manage Menu: Non-numeric Choice",
+        "Inputs": [
+            "2",
+            "abc",
+            "6",
+            "3"
+        ],
+        "Expected_Output": "Invalid choice. Please select 1-6."
+    },
+    {
+        "Test Case Name": "Manage Menu: Above Range",
+        "Inputs": [
+            "2",
+            "7",
+            "6",
+            "3"
+        ],
+        "Expected_Output": "Invalid choice. Please select 1-6."
+    },
+    {
+        "Test Case Name": "Select Plan: Non-numeric ID",
+        "Inputs": [
+            "2",
+            "1",
+            "abc",
+            "back",
+            "6",
+            "3"
+        ],
+        "Expected_Output": "Invalid input. Please enter a valid ID."
+    },
+    {
+        "Test Case Name": "Select Plan: Non-existent ID",
+        "Inputs": [
+            "2",
+            "1",
+            "9999",
+            "back",
+            "6",
+            "3"
+        ],
+        "Expected_Output": "Invalid input. Please enter a valid ID."
+    },
+    {
+        "Test Case Name": "Select Plan: Back Is Case-insensitive",
+        "Inputs": [
+            "2",
+            "1",
+            "BACK",
+            "6",
+            "3"
+        ],
+        "Expected_Output": "Goodbye!"
+    },
+    {
+        "Test Case Name": "Select Recipe: Non-numeric",
+        "Inputs": [
+            "2",
+            "1",
+            "1",
+            "abc",
+            "back",
+            "6",
+            "3"
+        ],
+        "Expected_Output": "Invalid input. Please enter a valid number."
+    },
+    {
+        "Test Case Name": "Select Recipe: Out of Range",
+        "Inputs": [
+            "2",
+            "1",
+            "1",
+            "999",
+            "back",
+            "6",
+            "3"
+        ],
+        "Expected_Output": "Invalid input. Please enter a valid number."
+    },
+    {
+        "Test Case Name": "Filter Name: No Match",
+        "Inputs": [
+            "2",
+            "2",
+            "zzzz",
+            "6",
+            "3"
+        ],
+        "Expected_Output": "No matching meal plans found."
+    },
+    {
+        "Test Case Name": "Filter Name: Empty Name Selects Nothing",
+        "Inputs": [
+            "2",
+            "2",
+            "",
+            "6",
+            "3"
+        ],
+        "Expected_Output": "No meal plans available to select."
+    },
+    {
+        "Test Case Name": "Filter Budget: Non-numeric",
+        "Inputs": [
+            "2",
+            "3",
+            "abc",
+            "0",
+            "6",
+            "3"
+        ],
+        "Expected_Output": "Invalid budget. Please enter a number."
+    },
+    {
+        "Test Case Name": "Filter Budget: Negative",
+        "Inputs": [
+            "2",
+            "3",
+            "-5",
+            "0",
+            "6",
+            "3"
+        ],
+        "Expected_Output": "Budget cannot be negative."
+    },
+    {
+        "Test Case Name": "Filter Budget: No Match",
+        "Inputs": [
+            "2",
+            "3",
+            "0",
+            "6",
+            "3"
+        ],
+        "Expected_Output": "No matching meal plans found."
+    },
+    {
+        "Test Case Name": "Filter Budget: Invalid Plan ID",
+        "Inputs": [
+            "2",
+            "3",
+            "100000",
+            "abc",
+            "back",
+            "6",
+            "3"
+        ],
+        "Expected_Output": "Invalid ID. Please select a plan from the displayed results."
+    },
+    {
+        "Test Case Name": "Rename Plan: Empty Name",
+        "Inputs": [
+            "2",
+            "4",
+            "1",
+            ""
+        ],
+        "Expected_Output": "Name cannot be empty. Please try again."
+    },
+    {
+        "Test Case Name": "Rename Plan: Whitespace Name",
+        "Inputs": [
+            "2",
+            "4",
+            "1",
+            "   "
+        ],
+        "Expected_Output": "Name cannot be empty. Please try again."
+    },
+    {
+        "Test Case Name": "Delete Plan: Non-numeric ID",
+        "Inputs": [
+            "2",
+            "5",
+            "abc",
+            "back",
+            "6",
+            "3"
+        ],
+        "Expected_Output": "Invalid input. Please enter a valid ID."
+    },
+    {
+        "Test Case Name": "Delete Plan: Invalid Confirmation",
+        "Inputs": [
+            "2",
+            "5",
+            "1",
+            "maybe",
+            "no",
+            "6",
+            "3"
+        ],
+        "Expected_Output": "Invalid input. Please enter Yes or No."
+    },
+    {
+        "Test Case Name": "Delete Plan: Cancelled",
+        "Inputs": [
+            "2",
+            "5",
+            "1",
+            "no",
+            "6",
+            "3"
+        ],
+        "Expected_Output": "Deletion cancelled."
     }
 ]
