@@ -55,11 +55,12 @@ def generate_id(records):
     return max(existing_ids) + 1
 
 
+d
 def save_record(user_input, meal_plan):
     """
     Save an accepted meal plan.
 
-    Felix's user_input list:
+    Felix's updated user_input list:
     [0] name
     [1] budget
     [2] pax
@@ -68,13 +69,15 @@ def save_record(user_input, meal_plan):
     [5] calorie count
     [6] cuisine
     [7] country
+    [8] protein count
+    [9] fat count
     """
 
     # Basic validation
     if not isinstance(user_input, (list, tuple)):
         return False
 
-    if len(user_input) < 8:
+    if len(user_input) < 10:
         return False
 
     if not isinstance(meal_plan, dict):
@@ -90,6 +93,13 @@ def save_record(user_input, meal_plan):
     record["name"] = user_input[0]
     record["budget"] = user_input[1]
     record["pax"] = user_input[2]
+    record["dietary_restrictions"] = user_input[3]
+    record["dietary_goal"] = user_input[4]
+    record["calorie_count"] = user_input[5]
+    record["cuisine"] = user_input[6]
+    record["country"] = user_input[7]
+    record["protein_count"] = user_input[8]
+    record["fat_count"] = user_input[9]
     record["date"] = datetime.now().strftime("%Y-%m-%d")
 
     records.append(record)
