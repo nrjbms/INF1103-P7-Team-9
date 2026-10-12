@@ -1,3 +1,4 @@
+
 import json
 import os
 from datetime import datetime
@@ -6,16 +7,10 @@ from datetime import datetime
 DATA_FILE = "meal_history.json"
 
 
+# Load all saved meal plans from meal_history.json
+# Return an empty list if the file does not exist,
+# is empty, corrupted, or does not contain a list
 def load_records():
-    """
-    Load all saved meal plans from meal_history.json.
-
-    Returns an empty list if:
-    - the file does not exist
-    - the file is empty
-    - the JSON is corrupted
-    - the stored data is not a list
-    """
 
     if not os.path.exists(DATA_FILE):
         return []
@@ -33,10 +28,8 @@ def load_records():
         return []
 
 
+# Generate a unique ID for each new meal plan
 def generate_id(records):
-    """
-    Generate a unique ID for a new meal plan.
-    """
 
     if not records:
         return 1
@@ -55,26 +48,25 @@ def generate_id(records):
     return max(existing_ids) + 1
 
 
+# Save an accepted meal plan into meal_history.json
+# Felix's updated user_input list:
+# [0] name
+# [1] budget
+# [2] pax
+# [3] dietary restrictions
+# [4] dietary goal
+# [5] calorie count
+# [6] cuisine
+# [7] country
+# [8] protein count
+# [9] fat count
 def save_record(user_input, meal_plan):
-    """
-    Save an accepted meal plan.
 
-    Felix's user_input list:
-    [0] name
-    [1] budget
-    [2] pax
-    [3] dietary restrictions
-    [4] dietary goal
-    [5] calorie count
-    [6] cuisine
-    [7] country
-    """
-
-    # Basic validation
+    # Validate user input and meal plan
     if not isinstance(user_input, (list, tuple)):
         return False
 
-    if len(user_input) < 8:
+    if len(user_input) < 10:
         return False
 
     if not isinstance(meal_plan, dict):
@@ -82,18 +74,26 @@ def save_record(user_input, meal_plan):
 
     records = load_records()
 
-    # Copy meal plan so original data is not modified
+    # Copy the accepted meal plan
     record = meal_plan.copy()
 
-    # Add Data Manager fields
+    # Add user information and nutritional targets
     record["id"] = generate_id(records)
     record["name"] = user_input[0]
     record["budget"] = user_input[1]
     record["pax"] = user_input[2]
+    record["dietary_restrictions"] = user_input[3]
+    record["dietary_goal"] = user_input[4]
+    record["calorie_count"] = user_input[5]
+    record["cuisine"] = user_input[6]
+    record["country"] = user_input[7]
+    record["protein_count"] = user_input[8]
+    record["fat_count"] = user_input[9]
     record["date"] = datetime.now().strftime("%Y-%m-%d")
 
     records.append(record)
 
+    # Save all records to JSON
     try:
         with open(DATA_FILE, "w", encoding="utf-8") as file:
             json.dump(
@@ -109,18 +109,15 @@ def save_record(user_input, meal_plan):
         return False
 
 
+# Return all saved meal plans
 def get_all_records():
-    """
-    Return all saved meal plans.
-    """
 
     return load_records()
 
 
+# Retrieve a saved meal plan using its ID
+# Return None if the ID does not exist
 def get_record_by_id(record_id):
-    """
-    Find one saved meal plan using its ID.
-    """
 
     records = load_records()
 
@@ -131,17 +128,10 @@ def get_record_by_id(record_id):
     return None
 
 
+# Search saved meal plans using a keyword
+# Search includes names, cuisines, ingredients,
+# dish names, and other saved information
 def search_records(search_word):
-    """
-    Search saved meal plans using a keyword.
-
-    Can match:
-    - name
-    - cuisine
-    - ingredients
-    - dish names
-    - other saved information
-    """
 
     records = load_records()
 
@@ -164,11 +154,9 @@ def search_records(search_word):
     return results
 
 
+# Filter saved meal plans by maximum grocery cost
+# Return plans with a total cost within the given budget
 def filter_by_budget(max_budget):
-    """
-    Return meal plans where the total grocery cost
-    is within the given budget.
-    """
 
     records = load_records()
     results = []
@@ -188,10 +176,9 @@ def filter_by_budget(max_budget):
     return results
 
 
+# Filter saved meal plans by user name
+# Name matching is not case-sensitive
 def filter_by_name(name):
-    """
-    Return all meal plans saved under a user's name.
-    """
 
     records = load_records()
     results = []
@@ -209,9 +196,12 @@ def filter_by_name(name):
 
     return results
 
-#Nur Jannah's Code for Update and Delete Functions
 
+# Nur Jannah's Code for Update and Delete Functions
+
+# Update the name of a saved meal plan using its ID
 def update_meal_plan_name(plan_id, new_name):
+
     records = load_records()
 
     for plan in records:
@@ -227,11 +217,14 @@ def update_meal_plan_name(plan_id, new_name):
     print("Meal plan not found.")
     return False
 
+
+# Delete a saved meal plan using its ID
 def delete_meal_plan(plan_id):
+
     records = load_records()
 
     for plan in records:
-        if str(plan.get("id")) == str(plan_id): 
+        if str(plan.get("id")) == str(plan_id):
             records.remove(plan)
 
             with open(DATA_FILE, "w") as file:
