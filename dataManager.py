@@ -1,15 +1,17 @@
 
 import json
 import os
+import math
+import tempfile
 from datetime import datetime
 
 
 DATA_FILE = "meal_history.json"
 
 
-# Load all saved meal plans from meal_history.json
-# Return an empty list if the file does not exist,
-# is empty, corrupted, or does not contain a list
+# Load saved meal plans from JSON
+# Return [] if the file does not exist
+# Return None if the file is corrupted or unreadable
 def load_records():
 
     if not os.path.exists(DATA_FILE):
@@ -17,29 +19,93 @@ def load_records():
 
     try:
         with open(DATA_FILE, "r", encoding="utf-8") as file:
-            data = json.load(file)
+            records = json.load(file)
 
-        if isinstance(data, list):
-            return data
+        if not isinstance(records, list):
+            return None
 
-        return []
+        # Check that all saved records are dictionaries
+        for record in records:
+            if not isinstance(record, dict):
+                return None
 
-    except (json.JSONDecodeError, OSError):
-        return []
+        return records
+
+    except (json.JSONDecodeError, OSError, UnicodeError):
+        return None
 
 
-# Generate a unique ID for each new meal plan
+# Save all records safely to JSON
+# Write to a temporary file before replacing the original
+def save_records(records):
+
+    if not isinstance(records, list):
+        return False
+
+    for record in records:
+        if not isinstance(record, dict):
+            return False
+
+    temp_path = None
+
+    try:
+        # Check that all data can be converted to JSON
+        json.dumps(records, allow_nan=False)
+
+        # Save temporary file in the same directory
+        directory = os.path.dirname(
+            os.path.abspath(DATA_FILE)
+        )
+
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=directory,
+            prefix=".meal_history_",
+            suffix=".tmp",
+            delete=False
+        ) as file:
+
+            temp_path = file.name
+
+            json.dump(
+                records,
+                file,
+                indent=4,
+                ensure_ascii=False,
+                allow_nan=False
+            )
+
+        # Replace the original only after writing succeeds
+        os.replace(temp_path, DATA_FILE)
+
+        return True
+
+    except (OSError, TypeError, ValueError):
+        return False
+
+    finally:
+        # Remove temporary file if saving failed
+        if temp_path is not None and os.path.exists(temp_path):
+            try:
+                os.remove(temp_path)
+            except OSError:
+                pass
+
+
+# Generate a unique ID based on existing saved records
 def generate_id(records):
-
-    if not records:
-        return 1
 
     existing_ids = []
 
     for record in records:
+
+        if not isinstance(record, dict):
+            continue
+
         record_id = record.get("id")
 
-        if isinstance(record_id, int):
+        if type(record_id) is int and record_id > 0:
             existing_ids.append(record_id)
 
     if not existing_ids:
@@ -48,8 +114,23 @@ def generate_id(records):
     return max(existing_ids) + 1
 
 
+# Validate numeric values such as budgets and grocery costs
+def is_valid_amount(value):
+
+    if isinstance(value, bool):
+        return False
+
+    try:
+        amount = float(value)
+
+    except (TypeError, ValueError, OverflowError):
+        return False
+
+    return math.isfinite(amount) and amount >= 0
+
+
 # Save an accepted meal plan into meal_history.json
-# Felix's updated user_input list:
+# Felix's user_input structure:
 # [0] name
 # [1] budget
 # [2] pax
@@ -62,7 +143,7 @@ def generate_id(records):
 # [9] fat count
 def save_record(user_input, meal_plan):
 
-    # Validate user input and meal plan
+    # Validate input structure
     if not isinstance(user_input, (list, tuple)):
         return False
 
@@ -72,16 +153,52 @@ def save_record(user_input, meal_plan):
     if not isinstance(meal_plan, dict):
         return False
 
+    # Validate user name
+    name = user_input[0]
+
+    if not isinstance(name, str) or not name.strip():
+        return False
+
+    # Validate user budget
+    if not is_valid_amount(user_input[1]):
+        return False
+
+    # Validate number of people
+    pax = user_input[2]
+
+    if type(pax) is not int or pax <= 0:
+        return False
+
+    # Validate total grocery cost
+    grocery_cost = meal_plan.get("Total_grocery_cost")
+
+    if not is_valid_amount(grocery_cost):
+        return False
+
+    # Validate grocery list and dishes
+    grocery_list = meal_plan.get("Grocery_list")
+    dishes = meal_plan.get("Dishes")
+
+    if not isinstance(grocery_list, list):
+        return False
+
+    if not isinstance(dishes, list):
+        return False
+
+    # Check that JSON file is safe to read
     records = load_records()
 
-    # Copy the accepted meal plan
+    if records is None:
+        return False
+
+    # Copy the meal plan to avoid modifying original data
     record = meal_plan.copy()
 
-    # Add user information and nutritional targets
+    # Add unique ID and user information
     record["id"] = generate_id(records)
-    record["name"] = user_input[0]
-    record["budget"] = user_input[1]
-    record["pax"] = user_input[2]
+    record["name"] = name.strip()
+    record["budget"] = float(user_input[1])
+    record["pax"] = pax
     record["dietary_restrictions"] = user_input[3]
     record["dietary_goal"] = user_input[4]
     record["calorie_count"] = user_input[5]
@@ -91,28 +208,23 @@ def save_record(user_input, meal_plan):
     record["fat_count"] = user_input[9]
     record["date"] = datetime.now().strftime("%Y-%m-%d")
 
+    # Add the new meal plan
     records.append(record)
 
-    # Save all records to JSON
-    try:
-        with open(DATA_FILE, "w", encoding="utf-8") as file:
-            json.dump(
-                records,
-                file,
-                indent=4,
-                ensure_ascii=False
-            )
-
-        return True
-
-    except (OSError, TypeError):
-        return False
+    # Save all records safely
+    return save_records(records)
 
 
 # Return all saved meal plans
+# Return [] if the file cannot be loaded
 def get_all_records():
 
-    return load_records()
+    records = load_records()
+
+    if records is None:
+        return []
+
+    return records
 
 
 # Retrieve a saved meal plan using its ID
@@ -121,28 +233,38 @@ def get_record_by_id(record_id):
 
     records = load_records()
 
+    if records is None:
+        return None
+
     for record in records:
-        if record.get("id") == record_id:
+
+        if str(record.get("id")) == str(record_id):
             return record
 
     return None
 
 
 # Search saved meal plans using a keyword
-# Search includes names, cuisines, ingredients,
-# dish names, and other saved information
+# Search across all saved record information
 def search_records(search_word):
 
     records = load_records()
 
+    if records is None:
+        return []
+
+    if search_word is None:
+        return []
+
     search_word = str(search_word).strip().lower()
 
-    if search_word == "":
+    if not search_word:
         return []
 
     results = []
 
     for record in records:
+
         record_text = json.dumps(
             record,
             ensure_ascii=False
@@ -159,37 +281,53 @@ def search_records(search_word):
 def filter_by_budget(max_budget):
 
     records = load_records()
-    results = []
 
-    try:
-        max_budget = float(max_budget)
-    except (ValueError, TypeError):
+    if records is None:
         return []
 
+    if not is_valid_amount(max_budget):
+        return []
+
+    max_budget = float(max_budget)
+
+    results = []
+
     for record in records:
+
         cost = record.get("Total_grocery_cost")
 
-        if isinstance(cost, (int, float)):
-            if cost <= max_budget:
+        if is_valid_amount(cost):
+
+            if float(cost) <= max_budget:
                 results.append(record)
 
     return results
 
 
 # Filter saved meal plans by user name
-# Name matching is not case-sensitive
+# Matching is case-insensitive
 def filter_by_name(name):
 
     records = load_records()
-    results = []
+
+    if records is None:
+        return []
+
+    if name is None:
+        return []
 
     name = str(name).strip().lower()
 
-    if name == "":
+    if not name:
         return []
 
+    results = []
+
     for record in records:
-        saved_name = str(record.get("name", "")).strip().lower()
+
+        saved_name = str(
+            record.get("name", "")
+        ).strip().lower()
 
         if saved_name == name:
             results.append(record)
@@ -197,41 +335,54 @@ def filter_by_name(name):
     return results
 
 
-# Nur Jannah's Code for Update and Delete Functions
+# Nur Jannah's Update and Delete Functions
+# Refactored to use the shared save_records function
+
 
 # Update the name of a saved meal plan using its ID
 def update_meal_plan_name(plan_id, new_name):
 
+    # Validate new name
+    if not isinstance(new_name, str):
+        return False
+
+    if not new_name.strip():
+        return False
+
+    # Load existing records
     records = load_records()
 
+    if records is None:
+        return False
+
+    # Find and update matching record
     for plan in records:
+
         if str(plan.get("id")) == str(plan_id):
-            plan["name"] = new_name
 
-            with open(DATA_FILE, "w") as file:
-                json.dump(records, file, indent=4)
+            plan["name"] = new_name.strip()
 
-            print("Meal plan name updated successfully!")
-            return True
+            return save_records(records)
 
-    print("Meal plan not found.")
     return False
 
 
 # Delete a saved meal plan using its ID
 def delete_meal_plan(plan_id):
 
+    # Load existing records
     records = load_records()
 
+    if records is None:
+        return False
+
+    # Find and delete matching record
     for plan in records:
+
         if str(plan.get("id")) == str(plan_id):
+
             records.remove(plan)
 
-            with open(DATA_FILE, "w") as file:
-                json.dump(records, file, indent=4)
+            return save_records(records)
 
-            print("\nMeal plan deleted successfully!")
-            return True
-
-    print("\nMeal plan not found.")
     return False
