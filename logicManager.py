@@ -1,6 +1,7 @@
 import json
 import math
-from dietaryRules import RESTRICTED_KEYWORDS, RESTRICTION_EXCEPTIONS
+DIETARY_RULES_FILE = "dietaryRules.json"
+
 
 # Default limits for the meal goals
 TOLERANCE = 0.10                 # allow dishes 10% leeway on calorie, protein and fat targets
@@ -11,6 +12,15 @@ HIGH_PROTEIN_MIN_RATIO = 0.25    # protein must supply >= 25% of calories
 PROTEIN_KCAL_PER_GRAM = 4        # 1 g of protein = 4 kcal
 FAT_KCAL_PER_GRAM = 9            # 1 g of fat = 9 kcal
 
+# Load the restriction keywords from dietaryRules.json.
+def load_dietary_rules():
+    try:
+        with open(DIETARY_RULES_FILE, "r", encoding="utf-8") as file:
+            rules = json.load(file)
+        return rules["restricted_keywords"], rules["restriction_exceptions"]
+    except (OSError, json.JSONDecodeError, KeyError, TypeError):
+        return None, None
+RESTRICTED_KEYWORDS, RESTRICTION_EXCEPTIONS = load_dietary_rules()
 
 # Read the first number out of a value, e.g. "540 kcal" -> 540.0, "1,200 kcal" -> 1200.0
 # Returns None if there is no number in it.
@@ -37,7 +47,6 @@ def parse_number(value):
         return None
     return float(number)
 
-
 # Split text into lowercase words, treating anything that is not a letter as a space.
 # "Minced Pork, Garlic" -> ["minced", "pork", "garlic"]
 def split_into_words(text):
@@ -48,7 +57,6 @@ def split_into_words(text):
         else:
             letters_only = letters_only + " "
     return letters_only.split()
-
 
 # True if the keyword appears as whole word(s) in the word list, allowing a plural ending.
 # "egg" matches ["fresh", "eggs"] but not ["eggplant"]; "soy sauce" matches ["light", "soy", "sauce"].
@@ -68,7 +76,6 @@ def contains_keyword(words, keyword):
             return True
     return False
 
-
 # Reasonability check for Custom Macros targets.
 # Protein and fat contain calories, so together they cannot add up to more than the calorie goal.
 # Returns (True, "") if the targets are possible, or (False, message) if they are not.
@@ -86,7 +93,6 @@ def check_macro_targets(calories, protein, fat):
                    f"{round(calories)} kcal. Please lower protein or fat, or raise calories.")
         return False, message
     return True, ""
-
 
 # Budget Rule
 def check_budget_compliance(total_grocery_cost, total_budget):
@@ -109,7 +115,6 @@ def check_budget_compliance(total_grocery_cost, total_budget):
         "reason": f"Total grocery cost (${total_grocery_cost:.2f}) is within total budget (${total_budget:.2f})"
     }
 
-
 # Keep only the items that are dictionaries (skips broken data from the AI)
 def only_dishes(ai_dishes):
     dishes = []
@@ -119,7 +124,6 @@ def only_dishes(ai_dishes):
         if isinstance(dish, dict):
             dishes.append(dish)
     return dishes
-
 
 # Dietary Restrictions Filter
 def filter_dishes_by_dietary_rules(ai_dishes, dietary_restrictions):
@@ -140,6 +144,13 @@ def filter_dishes_by_dietary_rules(ai_dishes, dietary_restrictions):
     flagged = []
     if len(restrictions) == 0:
         matching = dishes
+    elif RESTRICTED_KEYWORDS is None or RESTRICTION_EXCEPTIONS is None:
+        # dietaryRules.json could not be loaded, so no dish can be confirmed safe
+        for dish in dishes:
+            flagged.append({
+                "dish_name": dish.get("dish_name"),
+                "reason": f"Dietary rules could not be loaded from {DIETARY_RULES_FILE}"
+            })
     else:
         for dish in dishes:
             name = dish.get("dish_name")
@@ -173,7 +184,6 @@ def filter_dishes_by_dietary_rules(ai_dishes, dietary_restrictions):
         "valid_dishes": matching,
         "flagged_dishes": flagged,
     }
-
 
 # Macro & Nutritional Rules (Multi-Condition Rule)
 def filter_dishes_by_nutrition(ai_dishes, meal_goal, target_cal=None,
@@ -277,7 +287,6 @@ def filter_dishes_by_nutrition(ai_dishes, meal_goal, target_cal=None,
         "valid_dishes": valid_dishes,
     }
 
-
 # Preference Rules
 def filter_dishes_by_cuisine(ai_dishes, preferred_cuisines):
     dishes = only_dishes(ai_dishes)
@@ -315,7 +324,6 @@ def filter_dishes_by_cuisine(ai_dishes, preferred_cuisines):
         "flagged_dishes": flagged,
     }
 
-
 # Turn one word into its singular form: "eggs" -> "egg", "tomatoes" -> "tomato", "berries" -> "berry"
 def make_singular(word):
     if word.endswith("ies") and len(word) > 4:
@@ -326,7 +334,6 @@ def make_singular(word):
         return word[:-1]
     return word
 
-
 # Turn a name into a list of singular words: "Fresh Eggs" -> ["fresh", "egg"]
 def singular_words(text):
     words = []
@@ -334,14 +341,12 @@ def singular_words(text):
         words.append(make_singular(word))
     return words
 
-
 # True if every word in small_list is also in big_list
 def all_words_in(small_list, big_list):
     for word in small_list:
         if word not in big_list:
             return False
     return True
-
 
 # Grocery list filter: keep only ingredients used by the remaining dishes
 def filter_grocery_list(grocery_list, valid_dishes):
@@ -389,7 +394,6 @@ def filter_grocery_list(grocery_list, valid_dishes):
         "removed_items": removed_items,
         "total_cost": round(new_cost, 2),
     }
-
 
 def process_ai_response(ai_output, user_input):
     # Step 1: The AI manager returns JSON as text, so convert it to a dictionary.
@@ -503,7 +507,6 @@ def process_ai_response(ai_output, user_input):
                 "requirements. You may want to regenerate for more options"
             )
     return plan
-
 
 def get_item(user_input, index):
     if index < len(user_input):
