@@ -22,7 +22,6 @@ def craftprompt(pax, total_grocery_cost, country,exclusion):
         Generate a grocery list and meals for:
         Country: {country} | Budget: {total_grocery_cost} | Pax: {pax} | Exclusion: {exclusion}
 
-        Rule: "recipe" must be a single string with steps separated *only* by full stops (no numbers, bullets, or newlines).
         Schema:
         {{
         "pax": 1,
