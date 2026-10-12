@@ -4,6 +4,7 @@ import re
 import dataManager
 import pdfmaker
 
+# Welcome Message to JustEat
 def welcome_msg():
     print()
     print("=" *50)
@@ -275,6 +276,7 @@ def main_input():
         print("="*40)
         return all_input
 
+# Main Menu 
 def main_menu():
     print("\nMain Menu")
     print("-" * 30)
@@ -290,7 +292,7 @@ def main_menu():
 
 
 
-
+# Printing AI Output
 def display_generated_meal_plan(user_input, ai_output):
 
     print()
@@ -331,7 +333,7 @@ def display_generated_meal_plan(user_input, ai_output):
         )
 
 
-
+# Display One Meal Plans
 def display_meal_plan(plan):
 
     print()
@@ -358,6 +360,7 @@ def display_meal_plan(plan):
             f"Est. Price: ${recipe['price_per_meal']:.2f}"
         )
 
+# Loop for printing all saved meal plans
 def display_all_plans(meal_plans):
     print("-" * 30)
     print("Saved Meal Plans")
@@ -374,7 +377,7 @@ def display_all_plans(meal_plans):
                 f"[{plan.get('date', 'N/A')}]"
             )
 
-
+# Validation and ask for id of which plan user wants to edit or view
 def get_selected_plan(meal_plans):
     with open(meal_plans, "r") as file:
         plans = json.load(file)
@@ -397,7 +400,7 @@ def get_selected_plan(meal_plans):
 
         print("\nInvalid input. Please enter a valid ID.")
 
-
+# display recipe details for one meal plan
 def display_recipe_details(recipe):
     print()
     print("-" * 30)
@@ -416,7 +419,7 @@ def display_recipe_details(recipe):
         if instruction.strip():
             print(instruction.strip())
 
-
+# validation for what recipe user would like to view 
 def get_selected_recipe(plan):
     while True:
         choice = input(
@@ -433,7 +436,8 @@ def get_selected_recipe(plan):
             display_recipe_details(plan["Dishes"][int(choice) - 1])
         else:
             print("\nInvalid input. Please enter a valid number.")
-            
+
+# Option 2: Manage Meal Plans menu            
 def  manage_plans_menu():
     print("\nManage Meal Plans")
     print("-" * 50)
@@ -453,7 +457,7 @@ def  manage_plans_menu():
     return None
 
 
-
+# Displaying filtered meal plans
 def display_filtered_plans(filtered_plans):
     print("\nFiltered Saved Meal Plans")
     print("-" * 50)
@@ -470,7 +474,7 @@ def display_filtered_plans(filtered_plans):
                 f"[{plan.get('date', 'N/A')}]"
             )
        
-
+#validation for meal plan user would like to see.
 def get_selected_filtered_plan(filtered_plans):
     if not filtered_plans:
         print("No meal plans available to select.")
@@ -488,7 +492,7 @@ def get_selected_filtered_plan(filtered_plans):
 
         print("\nInvalid ID. Please select a plan from the displayed results.")
 
-
+# regeneration prompt and validation
 def ask_regenerate():
     while True:
         again = input("\nDo you want to regenerate? (Yes/No): ")
@@ -501,7 +505,7 @@ def ask_regenerate():
         else:
             print("\nInvalid input. Please enter Yes or No.")
 
-
+# validation to change name of meal plan
 def change_meal_plan_name(plan):
     print("\nChange Meal Plan Name")
     print("-" * 30)
@@ -515,6 +519,7 @@ def change_meal_plan_name(plan):
         else:
             print("\nName cannot be empty. Please try again.")
 
+#validation to delete meal plan
 def delete_meal_plan(meal_plans):
     display_all_plans(meal_plans)
     print("\nDelete Meal Plan")
@@ -542,11 +547,11 @@ def delete_meal_plan(meal_plans):
         else:
             print("\nInvalid input. Please enter Yes or No.")
             
-
+# input for name for filtering to match for dataManager function
 def get_name_filter():
     return input("\nEnter the name to search for: ").strip()
 
-
+# input validation for budget for filtering to match for dataManager function
 def get_budget_filter():
     while True:
         try:
