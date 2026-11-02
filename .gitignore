@@ -8,3 +8,5 @@ __pycache__/
 # Generated / local data
 meal-plan.pdf
 meal_history.json
+
+personaltesting.py
