@@ -1,0 +1,12 @@
+# Secrets
+.env
+
+# Python bytecode
+__pycache__/
+*.pyc
+
+# Generated / local data
+meal-plan.pdf
+meal_history.json
+
+personaltesting.py
