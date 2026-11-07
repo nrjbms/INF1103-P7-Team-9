@@ -19,6 +19,7 @@ class GeminiAPI:
           self.__exclusion = exclusion
           self.__meal_plan_data = None
           self.__prompt = None
+          self.__feedbackprompt = None
           self.__env = Path(__file__).resolve().parent / ".env"     #initialise __env which will be checked at call_api()
     
     #crafts prompt and saves it to __prompt
@@ -82,6 +83,28 @@ class GeminiAPI:
         else:
             print("Error: ENV file not found!!!")
             return False
+
+    def craft_feedback_prompt(self,prexisting_mealplans):
+          self.__feedbackprompt = f"""Analyze existing meals: {prexisting_mealplans}. Identify nutrient gaps, then generate an optimized diet/grocery list addressing them for:
+Country: {self.__country} | Budget: {self.__total_grocery_cost} | Pax: {self.__pax} | Exclusion: {self.__exclusion}
+
+Return JSON matching this schema exactly:
+{
+"pax": 1,
+"Error": "string or 'budget is too low to craft a meal'",
+"Total_grocery_cost": 0.0,
+"Grocery_list": [{"ingredient_name": "string", "Price_per_ingredient": 0.0, "Quantity": "string"}],
+"Dishes": [{
+    "dish_name": "string",
+    "cuisine": "Chinese|Malay|Indian|Japanese|Thai|Korean|Vietnamese|Italian|Mexican|Western",
+    "recipe": "string",
+    "calorie_count_per_meal_output": "string",
+    "protein_count_per_meal_output": "string",
+    "fats_count_per_meal": "string",
+    "price_per_meal": 0.0,
+    "ingredients": "string"
+}]
+}"""
 
     #return generated meal plan
     def generate_meal_plan(self):
