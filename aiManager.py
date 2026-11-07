@@ -52,14 +52,19 @@ class GeminiAPI:
         """
     
     #call API using __prompt
-    def call_api(self):
+    def call_api(self,prompt_type):
+        if prompt_type == "feedback":
+            __content = self.__feedbackprompt
+        else:
+            __content = self.__prompt
+
         if (self.__env.exists() and load_dotenv() != False):                        #check if env file missing and "load_dotenv()" loads the env file while checking if its empty
             client = genai.Client(http_options=types.HttpOptions(timeout=150000))   #A timer incase the AI takes too long to return an object
             try:
                 #API Call to gemini 3.8 flash
                 response = client.models.generate_content(
                     model="gemini-3.8-flash",
-                    contents=self.__prompt,
+                    contents=__content,
                     config=types.GenerateContentConfig(
                     response_mime_type="application/json"
                     )
@@ -85,17 +90,18 @@ class GeminiAPI:
             return False
 
     #craft the API prompt to analyse history of meals
-    def craft_feedback_prompt(self,prexisting_mealplans):
-          self.__feedbackprompt = f"""Analyze existing meals: {prexisting_mealplans}. Identify nutrient gaps, then generate an optimized diet/grocery list addressing them for:
+    def craft_feedback_prompt(self, prexisting_mealplans):
+        self.__feedbackprompt = f'''Analyze existing meals: {prexisting_mealplans}. Identify and state the specific vitamins and nutrients that are missing along with their recommended amounts. Then, generate an optimized diet/grocery list addressing them for:
 Country: {self.__country} | Budget: {self.__total_grocery_cost} | Pax: {self.__pax} | Exclusion: {self.__exclusion}
 
 Return JSON matching this schema exactly:
-{
+{{
 "pax": 1,
+"observation": "string",
 "Error": "string or 'budget is too low to craft a meal'",
 "Total_grocery_cost": 0.0,
-"Grocery_list": [{"ingredient_name": "string", "Price_per_ingredient": 0.0, "Quantity": "string"}],
-"Dishes": [{
+"Grocery_list": [{{"ingredient_name": "string", "Price_per_ingredient": 0.0, "Quantity": "string"}}],
+"Dishes": [{{
     "dish_name": "string",
     "cuisine": "Chinese|Malay|Indian|Japanese|Thai|Korean|Vietnamese|Italian|Mexican|Western",
     "recipe": "string",
@@ -104,9 +110,8 @@ Return JSON matching this schema exactly:
     "fats_count_per_meal": "string",
     "price_per_meal": 0.0,
     "ingredients": "string"
-}]
-}"""
-
+}}]
+}}'''
     #return generated meal plan
     def generate_meal_plan(self):
         return self.__meal_plan_data
