@@ -84,6 +84,7 @@ class GeminiAPI:
             print("Error: ENV file not found!!!")
             return False
 
+    #craft the API prompt to analyse history of meals
     def craft_feedback_prompt(self,prexisting_mealplans):
           self.__feedbackprompt = f"""Analyze existing meals: {prexisting_mealplans}. Identify nutrient gaps, then generate an optimized diet/grocery list addressing them for:
 Country: {self.__country} | Budget: {self.__total_grocery_cost} | Pax: {self.__pax} | Exclusion: {self.__exclusion}
