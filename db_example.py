@@ -38,3 +38,31 @@ def fetch_restaurants():
 
 if __name__ == "__main__":
     fetch_restaurants()
+
+
+
+    """
+    Copy these sql statements into your schema to create tables and insert false so we can make the test
+
+
+    #CREATE DATABASE justeat;-- 1. Make sure you are using your database
+USE justeat;
+
+-- 2. Create a test table
+CREATE TABLE IF NOT EXISTS restaurants (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    cuisine_type VARCHAR(50),
+    rating DECIMAL(3,2),
+    is_active BOOLEAN DEFAULT TRUE
+);
+
+-- 3. Insert some initial test data
+INSERT INTO restaurants (name, cuisine_type, rating) VALUES 
+('Burger Joint', 'Fast Food', 4.5),
+('Pizza Palace', 'Italian', 4.2),
+('Sushi Express', 'Japanese', 4.8);
+
+-- 4. Verify the data was added
+SELECT * FROM restaurants;
+    """
