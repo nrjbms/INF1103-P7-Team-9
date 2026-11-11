@@ -45,7 +45,7 @@ if __name__ == "__main__":
     Copy these sql statements into your schema to create tables and insert false so we can make the test
 
 
-    #CREATE DATABASE justeat;-- 1. Make sure you are using your database
+#CREATE DATABASE justeat;-- 1. Make sure you are using your database
 USE justeat;
 
 -- 2. Create a test table
