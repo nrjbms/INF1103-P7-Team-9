@@ -4,6 +4,8 @@ import re
 import pdfmaker
 
 class InputManager:
+    def __init__(self, data_manager):
+        self.__data_manager = data_manager
     # Welcome Message to JustEat
     def welcome_msg(self):
         print()
@@ -23,7 +25,7 @@ class InputManager:
             return name_input
 
     # budget,
-    min_budget = 9.99
+    MIN_BUDGET = 9.99
     def get_budget_input(self, budget_input):
         # Prompt user for their budget
         budget_input = input(budget_input)
@@ -34,7 +36,7 @@ class InputManager:
             print("Error. Please enter a valid number")
             return None
         # Rejects budget if budget is too small
-        if budget_input <= self.min_budget:
+        if budget_input <= self.MIN_BUDGET:
             print("It will be difficult to suggest meal plans with such a small budge. Please allocate more budget and try again.")
             return None
         else:
@@ -91,7 +93,7 @@ class InputManager:
     def __print_macros(self, calories, protein, fat):
         print(f"Calorie Count: {calories}kcal")
         print(f"Protein Count: {protein}g")
-        print(f"Fat count: {fat}g")
+        print(f"Fat Count: {fat}g")
 
     def get_calorie_count(self, selected_goals): 
         # Uses the selected goal to determine calorie, protein, and fat count
@@ -100,9 +102,9 @@ class InputManager:
             calories, protein, fat = self.PRESET_MACROS[goal]
             self.__print_macros(calories, protein, fat)
 
+        elif goal == "Custom Macros":
             # Allows user to input their desired macros
             # Loops until user inputs the appropriate calorie values
-        elif goal == "Custom Macros":
             calories = self.__minimum_goals(
                 "Enter calorie goal (kcal): ", 350,
                 "Please have at least 350kcal to receive sufficient nutrients.\n")
@@ -296,7 +298,7 @@ class InputManager:
 
 
     # Printing AI Output
-    def display_generated_meal_plan(user_input, ai_output):
+    def display_generated_meal_plan(self, user_input, ai_output):
 
         print()
         print(f"Meal Plan for {user_input[0]}")
@@ -337,12 +339,11 @@ class InputManager:
 
 
     # Display One Meal Plans
-    def display_meal_plan(plan):
+    def display_meal_plan(self, plan):
 
         print()
         print(f"Meal Plan for {plan['name']}")
         print("-" * 30)
-
         print(f"Total Grocery Cost: ${plan['Total_grocery_cost']:.2f}")
 
         print("\nIngredient List:")
@@ -364,7 +365,7 @@ class InputManager:
             )
 
     # Loop for printing all saved meal plans
-    def display_all_plans(meal_plans):
+    def display_all_plans(self, meal_plans):
         print("-" * 30)
         print("Saved Meal Plans")
         print("-" * 30)
@@ -381,7 +382,7 @@ class InputManager:
                 )
 
     # Validation and ask for id of which plan user wants to edit or view
-    def get_selected_plan(meal_plans):
+    def get_selected_plan(self, meal_plans):
         with open(meal_plans, "r") as file:
             plans = json.load(file)
 
@@ -404,7 +405,7 @@ class InputManager:
             print("\nInvalid input. Please enter a valid ID.")
 
     # display recipe details for one meal plan
-    def display_recipe_details(recipe):
+    def display_recipe_details(self, recipe):
         print()
         print("-" * 30)
         print(f"Recipe: {recipe['dish_name']} ({recipe['cuisine']})")
@@ -423,7 +424,7 @@ class InputManager:
                 print(instruction.strip())
 
     # validation for what recipe user would like to view 
-    def get_selected_recipe(plan):
+    def get_selected_recipe(self, plan):
         while True:
             choice = input(
                 "\nEnter the number of the recipe you want to view "
@@ -433,10 +434,11 @@ class InputManager:
             if choice.lower() == "back":
                 return False
             elif choice.lower() == "print":
-                pdfmaker.makepdf(plan)
+                filename = f"meal_plan_{plan.get('id', 'new')}"
+                pdfmaker.PDF(plan, filename).makepdf()
                 return False
             if choice.isdigit() and 1 <= int(choice) <= len(plan["Dishes"]):
-                display_recipe_details(plan["Dishes"][int(choice) - 1])
+                self.display_recipe_details(plan["Dishes"][int(choice) - 1])
             else:
                 print("\nInvalid input. Please enter a valid number.")
 
@@ -461,7 +463,7 @@ class InputManager:
 
 
     # Displaying filtered meal plans
-    def display_filtered_plans(filtered_plans):
+    def display_filtered_plans(self, filtered_plans):
         print("\nFiltered Saved Meal Plans")
         print("-" * 50)
 
@@ -478,7 +480,7 @@ class InputManager:
                 )
         
     #validation for meal plan user would like to see.
-    def get_selected_filtered_plan(filtered_plans):
+    def get_selected_filtered_plan(self, filtered_plans):
         if not filtered_plans:
             print("No meal plans available to select.")
             return None
@@ -496,10 +498,9 @@ class InputManager:
             print("\nInvalid ID. Please select a plan from the displayed results.")
 
     # regeneration prompt and validation
-    def ask_regenerate():
+    def ask_regenerate(self):
         while True:
-            again = input("\nDo you want to regenerate? (Yes/No): ")
-            again = again.strip().lower()
+            again = input("\nDo you want to regenerate? (Yes/No): ").strip().lower()
 
             if again == "yes":
                 return True
@@ -509,7 +510,7 @@ class InputManager:
                 print("\nInvalid input. Please enter Yes or No.")
 
     # validation to change name of meal plan
-    def change_meal_plan_name(plan):
+    def change_meal_plan_name(self, plan):
         print("\nChange Meal Plan Name")
         print("-" * 30)
         print(f"Current name: {plan.get('name', 'N/A')}")
@@ -523,11 +524,11 @@ class InputManager:
                 print("\nName cannot be empty. Please try again.")
 
     #validation to delete meal plan
-    def delete_meal_plan(meal_plans):
-        display_all_plans(meal_plans)
+    def delete_meal_plan(self, meal_plans):
+        self.display_all_plans(meal_plans)
         print("\nDelete Meal Plan")
 
-        selected_plan = get_selected_plan(meal_plans)
+        selected_plan = self.get_selected_plan(meal_plans)
 
         if selected_plan is None:
             return
@@ -535,12 +536,10 @@ class InputManager:
         print(f"\nSelected meal plan: \n{selected_plan.get('name', 'N/A')}")
 
         while True:
-            confirm = input("\nAre you sure you want to delete this meal plan? (yes/no): ")
-            confirm = confirm.strip().lower()
+            confirm = input("\nAre you sure you want to delete this meal plan? (yes/no): ").strip().lower()
 
             if confirm == "yes":
-                import dataManager
-                dataManager.delete_meal_plan(selected_plan["id"])
+                self.__data_manager.delete_meal_plan(selected_plan["id"])
                 return
 
             elif confirm == "no":
@@ -551,11 +550,11 @@ class InputManager:
                 print("\nInvalid input. Please enter Yes or No.")
                 
     # input for name for filtering to match for dataManager function
-    def get_name_filter():
+    def get_name_filter(self):
         return input("\nEnter the name to search for: ").strip()
 
     # input validation for budget for filtering to match for dataManager function
-    def get_budget_filter():
+    def get_budget_filter(self):
         while True:
             try:
                 budget = float(input("\nEnter the budget to filter by: $"))
@@ -570,12 +569,10 @@ class InputManager:
 
 
     PLAN_KEYS = ("pax", "Total_grocery_cost", "Grocery_list", "Dishes")
-
         # plan: dict with keys such as "Dishes", "Grocery_list", etc.
         # dish_selection_prompt: the y/n prompt shown to the user
         # user_input: the user's profile
-        # dataManager: saves record
-    def get_accept_reject_menu(plan, dish_selection_prompt, user_input, dataManager):
+    def get_accept_reject_menu(self, plan, dish_selection_prompt, user_input):
 
         # Guard against a missing/invalid plan so .get() below never fails
         if not isinstance(plan, dict):
@@ -592,8 +589,8 @@ class InputManager:
             if dish_selection == 'y':
 
                 # Build record to save from just the allowed keys
-                plan_to_save = {key: plan[key] for key in PLAN_KEYS if key in plan}
-                saved_successfully = dataManager.save_record(user_input, plan_to_save)
+                plan_to_save = {key: plan[key] for key in self.PLAN_KEYS if key in plan}
+                saved_successfully = self.__data_manager.save_record(user_input, plan_to_save)
 
                 if saved_successfully:
                     print("Record saved successfully!")
@@ -655,7 +652,7 @@ class InputManager:
                 print("Error. Please select y/n.")
 
     # Show the logic manager's results: removed dishes, rejection reason and warnings (brandon)
-    def display_plan_messages(plan):
+    def display_plan_messages(self, plan):
         for flagged in plan.get("flagged_dishes", []):
             print(f"Removed '{flagged['dish_name']}': {flagged['reason']}")
 
