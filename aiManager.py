@@ -116,6 +116,41 @@ Return JSON matching this schema exactly:
     def generate_meal_plan(self):
         return self.__meal_plan_data
 
+    def hardcode_normal_meal_plan(self):
+     #check if sampleoutput exists and has contents
+        if Path("sampleoutput.json").exists():
+                try:
+                    with open("sampleoutput.json", "r") as file:
+                        data = json.load(file)
+
+                    if not data:
+                        print("\nSample output is missing!")
+                    else:
+                        #returns the sampleoutput
+                        self.__meal_plan_data = data
+                except json.JSONDecodeError:
+                    print("\nSample output is missing!")
+        else:
+            return ("\nUnable to generate response!")
+
+    
+    def hardcode_feedback_meal_plan(self):
+     #check if sample feedback output exists and has contents
+        if Path("samplefeedbackoutput.json").exists():
+                try:
+                    with open("samplefeedbackoutput.json", "r") as file:
+                        data = json.load(file)
+
+                    if not data:
+                        print("\nSample feedback output is missing!")
+                    else:
+                        #returns the sample feedback output
+                        self.__meal_plan_data = data
+                except json.JSONDecodeError:
+                    print("\nSample feedback output is missing!")
+        else:
+            return ("\nUnable to generate response!")
+
 
 
 

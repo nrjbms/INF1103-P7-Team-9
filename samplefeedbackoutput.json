@@ -1,0 +1,99 @@
+
+{
+  "pax": 1,
+  "observation": "Previous meals predominantly featured refined carbohydrates, eggs, dairy, and canned tuna, leaving severe micronutrient and fiber deficits. Missing nutrients include: Dietary Fiber (RDA: 25-30g/day, absent due to lack of whole grains and vegetables), Vitamin C (RDA: 75-90mg/day, critical for immunity and tissue repair, completely missing), Vitamin A/Beta-Carotene (RDA: 700-900 mcg RAE/day, vital for vision and immune health), and Folate/Potassium (RDA: 400 mcg/day Folate, 2,600-3,400 mg/day Potassium, absent due to lack of fresh leafy greens and fruits).",
+  "Error": "",
+  "Total_grocery_cost": 34.6,
+  "Grocery_list": [
+    {
+      "ingredient_name": "Brown Rice",
+      "Price_per_ingredient": 3.8,
+      "Quantity": "1 kg"
+    },
+    {
+      "ingredient_name": "Fresh Spinach (Xiao Bai Cai)",
+      "Price_per_ingredient": 1.4,
+      "Quantity": "250g"
+    },
+    {
+      "ingredient_name": "Broccoli",
+      "Price_per_ingredient": 2.2,
+      "Quantity": "1 head (350g)"
+    },
+    {
+      "ingredient_name": "Carrots",
+      "Price_per_ingredient": 1.3,
+      "Quantity": "500g"
+    },
+    {
+      "ingredient_name": "Red Bell Pepper",
+      "Price_per_ingredient": 2.2,
+      "Quantity": "2 pcs"
+    },
+    {
+      "ingredient_name": "Chicken Breast",
+      "Price_per_ingredient": 5.8,
+      "Quantity": "500g"
+    },
+    {
+      "ingredient_name": "Salmon Fillet",
+      "Price_per_ingredient": 7.5,
+      "Quantity": "250g"
+    },
+    {
+      "ingredient_name": "Firm Tofu",
+      "Price_per_ingredient": 1.2,
+      "Quantity": "300g"
+    },
+    {
+      "ingredient_name": "Fresh Oranges",
+      "Price_per_ingredient": 3.8,
+      "Quantity": "5 pcs"
+    },
+    {
+      "ingredient_name": "Garlic & Soy Sauce Condiment Set",
+      "Price_per_ingredient": 2.4,
+      "Quantity": "1 set"
+    },
+    {
+      "ingredient_name": "Fresh Eggs",
+      "Price_per_ingredient": 3.0,
+      "Quantity": "10 pcs"
+    }
+  ],
+  "Dishes": [
+    {
+      "dish_name": "Garlic Chicken and Broccoli Brown Rice Bowl",
+      "cuisine": "Chinese",
+      "recipe": "1. Cook 75g of brown rice. 2. Slice 150g chicken breast and stir-fry with minced garlic in a non-stick pan. 3. Add 120g chopped broccoli florets and sliced carrots with a splash of water and 1 tbsp soy sauce. 4. Cover to steam until broccoli is tender-crisp. 5. Serve hot over brown rice.",
+      "calorie_count_per_meal_output": "510 kcal",
+      "protein_count_per_meal_output": "44g",
+      "fats_count_per_meal": "8g",
+      "price_per_meal": 3.85,
+      "ingredients": "Brown Rice, Chicken Breast, Broccoli, Carrots, Garlic, Soy Sauce"
+    },
+    {
+      "dish_name": "Pan-Seared Salmon with Sauteed Xiao Bai Cai",
+      "cuisine": "Chinese",
+      "recipe": "1. Season 125g salmon fillet with salt and pepper, sear skin-down for 4 minutes, flip and cook for 3 minutes. 2. In the same pan, flash fry 125g chopped Xiao Bai Cai with minced garlic for 2 minutes. 3. Serve alongside 75g cooked brown rice with a fresh orange for dessert.",
+      "calorie_count_per_meal_output": "540 kcal",
+      "protein_count_per_meal_output": "36g",
+      "fats_count_per_meal": "18g",
+      "price_per_meal": 5.2,
+      "ingredients": "Salmon Fillet, Fresh Spinach (Xiao Bai Cai), Brown Rice, Garlic, Fresh Orange"
+    },
+    {
+      "dish_name": "Colorful Tofu & Bell Pepper Stir-Fry",
+      "cuisine": "Chinese",
+      "recipe": "1. Cube 150g firm tofu and pan-sear until golden. 2. Slice 1 red bell pepper and 1 carrot. 3. Stir-fry vegetables and tofu with minced garlic and soy sauce for 4-5 minutes. 4. Serve over 75g cooked brown rice.",
+      "calorie_count_per_meal_output": "430 kcal",
+      "protein_count_per_meal_output": "22g",
+      "fats_count_per_meal": "11g",
+      "price_per_meal": 2.7,
+      "ingredients": "Firm Tofu, Red Bell Pepper, Carrots, Garlic, Soy Sauce, Brown Rice"
+    }
+  ]
+}
+
+
+
