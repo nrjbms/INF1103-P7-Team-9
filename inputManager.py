@@ -15,7 +15,7 @@ class InputManager:
         print("=" *50)
 
     # Name
-    def get_name_input(self, name_input): 
+    def __get_name_input(self, name_input): 
         # Prompt user for their names
         name_input = input(name_input)
         # Allows user to quit
@@ -25,8 +25,8 @@ class InputManager:
             return name_input
 
     # budget,
-    MIN_BUDGET = 9.99
-    def get_budget_input(self, budget_input):
+    __MIN_BUDGET = 9.99
+    def __get_budget_input(self, budget_input):
         # Prompt user for their budget
         budget_input = input(budget_input)
         # Validates if budget is a number/float
@@ -36,14 +36,14 @@ class InputManager:
             print("Error. Please enter a valid number")
             return None
         # Rejects budget if budget is too small
-        if budget_input <= self.MIN_BUDGET:
+        if budget_input <= self.__MIN_BUDGET:
             print("It will be difficult to suggest meal plans with such a small budge. Please allocate more budget and try again.")
             return None
         else:
             return budget_input
 
     # pax per,
-    def get_pax_input(self, pax_input):
+    def __get_pax_input(self, pax_input):
         # Prompt user for their pax
         pax_input = input(pax_input)
         # Validates if pax is a number and if pax entered is bigger than 0
@@ -54,9 +54,9 @@ class InputManager:
             return None
 
     # dietary restrictions,
-    def open_restrictions_menu(self):
+    def __open_restrictions_menu(self):
         # Displays dietary restriction menu, allows user to select mulitple restrictions
-        restrictions_selected = self.prompt_menu("Dietary Restrictions Menu", self.RESTRICTIONS, multiple=True)
+        restrictions_selected = self.__prompt_menu("Dietary Restrictions Menu", self.__RESTRICTIONS, multiple=True)
         if restrictions_selected is None:
             print("No dietary restriction selected.")
             # Returns ('None',) if users press Enter to skip
@@ -66,9 +66,9 @@ class InputManager:
         return restrictions_selected
 
     # meal goal,
-    def open_goal_menu(self):
+    def __open_goal_menu(self):
         # Displays dietary goals menu, only allows user to select one option
-        goals_selected = self.prompt_menu("Dietary Goal Menu", self.GOALS, multiple=False)
+        goals_selected = self.__prompt_menu("Dietary Goal Menu", self.__GOALS, multiple=False)
         if goals_selected is None:
             # Returns ('None',) if users press Enter to skip
             return ('None',)
@@ -76,12 +76,12 @@ class InputManager:
         # Returns a one-item tuple with selected goal
         return goals_selected
 
-    PRESET_MACROS = {
+    __PRESET_MACROS = {
         "Standard": (650, 27, 20),
         "Low Calories": (500, 22, 15),
         "High Protein": (800, 35, 25),
     }
-    DEFAULT_MACROS = PRESET_MACROS["Standard"]
+    __DEFAULT_MACROS = __PRESET_MACROS["Standard"]
 
     def __minimum_goals(self, prompt, minimum, error_msg):
         while True:
@@ -95,11 +95,11 @@ class InputManager:
         print(f"Protein Count: {protein}g")
         print(f"Fat Count: {fat}g")
 
-    def get_calorie_count(self, selected_goals): 
+    def __get_calorie_count(self, selected_goals): 
         # Uses the selected goal to determine calorie, protein, and fat count
         goal = selected_goals[0] if len(selected_goals) == 1 else None
-        if goal in self.PRESET_MACROS:
-            calories, protein, fat = self.PRESET_MACROS[goal]
+        if goal in self.__PRESET_MACROS:
+            calories, protein, fat = self.__PRESET_MACROS[goal]
             self.__print_macros(calories, protein, fat)
 
         elif goal == "Custom Macros":
@@ -120,20 +120,20 @@ class InputManager:
  
         elif goal == "None":
             print("Since you have not selected a calorie goal, Standard will be chosen")
-            calories, protein, fat = self.DEFAULT_MACROS
+            calories, protein, fat = self.__DEFAULT_MACROS
             self.__print_macros(calories, protein, fat)
  
         else:
             print("Goal not defined. Standard will be chosen")
-            calories, protein, fat = self.DEFAULT_MACROS
+            calories, protein, fat = self.__DEFAULT_MACROS
             self.__print_macros(calories, protein, fat)
  
         return calories, protein, fat
 
     #Cuisine
-    def open_cuisine_menu(self):
+    def __open_cuisine_menu(self):
         # Displays cuisine menu, allows user to select mulitple cuisine
-        cuisine_selected = self.prompt_menu("Cuisine Menu", self.CUISINE, multiple=True)
+        cuisine_selected = self.__prompt_menu("Cuisine Menu", self.__CUISINE, multiple=True)
         if cuisine_selected is None:
             # Returns ('Anything',) if users press Enter to skip
             print("No cuisine selected. Anything will be chosen")
@@ -146,14 +146,14 @@ class InputManager:
     # Selection Menu
     # Tuples used to keep choices fixed and ordered
     # Choices shown in dietary restriction menu
-    RESTRICTIONS = ("Seafood", "Nuts", "Dairy", "Wheat", "Eggs", "Halal")
+    __RESTRICTIONS = ("Seafood", "Nuts", "Dairy", "Wheat", "Eggs", "Halal")
     # Choices shown in dietary goal menu
-    GOALS = ("Standard", "Low Calories", "High Protein", "Custom Macros")
+    __GOALS = ("Standard", "Low Calories", "High Protein", "Custom Macros")
     # Choices shown in cuisine menu
-    CUISINE = ("Anything", "Chinese", "Malay", "Indian", "Japanese", "Thai",
+    __CUISINE = ("Anything", "Chinese", "Malay", "Indian", "Japanese", "Thai",
             "Korean", "Vietnamese", "Italian", "Mexican", "Western")
 
-    def prompt_menu(self, title, options, multiple):
+    def __prompt_menu(self, title, options, multiple):
         # Displays each menu according to their title
         print(f"\n------[{title}]------")
         # Numbering starts at 1
@@ -195,7 +195,7 @@ class InputManager:
             return tuple(options[i] for i in indexes)
 
     # country/currency,
-    def get_country_input(self, country_input):
+    def __get_country_input(self, country_input):
         # Prompts for a country and validates it with pycountry.
         country_input = input(country_input)
         # Rejects numbers
@@ -225,7 +225,7 @@ class InputManager:
         while True:
 
             # Name/Quit
-            name_input = self.get_name_input("Enter name (Enter 'quit' to quit): ").strip()
+            name_input = self.__get_name_input("Enter name (Enter 'quit' to quit): ").strip()
             if not name_input:
                 print("Name cannot be empty. Please try again.")
                 continue
@@ -236,27 +236,27 @@ class InputManager:
 
             budget_input = None
             while not isinstance(budget_input, float):
-                budget_input = self.get_budget_input("Enter Budget (Min $10.0): ")
+                budget_input = self.__get_budget_input("Enter Budget (Min $10.0): ")
             print("Your budget is:", budget_input)
  
             pax_input = None
             while not isinstance(pax_input, int):
-                pax_input = self.get_pax_input("Enter Pax: ")
+                pax_input = self.__get_pax_input("Enter Pax: ")
             print("Number of pax: ", pax_input)
 
             # restriction, cuisine, goals menu
-            selected_restrictions = self.open_restrictions_menu()
+            selected_restrictions = self.__open_restrictions_menu()
             
-            selected_cuisine = self.open_cuisine_menu()
+            selected_cuisine = self.__open_cuisine_menu()
 
-            selected_goals = self.open_goal_menu()
+            selected_goals = self.__open_goal_menu()
 
             # Turns the chosen goal into calorie/protein/fat counts
-            calorie_count, protein_count, fat_count = self.get_calorie_count(selected_goals)
+            calorie_count, protein_count, fat_count = self.__get_calorie_count(selected_goals)
 
             # Loops until the error value isn't returned
             while True:
-                country_input = self.get_country_input("\nEnter country: ")
+                country_input = self.__get_country_input("\nEnter country: ")
                 if not country_input == "country_error":
                     print("Selected Country: ", country_input)
                     break   
@@ -568,7 +568,7 @@ class InputManager:
                 print("\nInvalid budget. Please enter a number.")
 
 
-    PLAN_KEYS = ("pax", "Total_grocery_cost", "Grocery_list", "Dishes")
+    __PLAN_KEYS = ("pax", "Total_grocery_cost", "Grocery_list", "Dishes")
         # plan: dict with keys such as "Dishes", "Grocery_list", etc.
         # dish_selection_prompt: the y/n prompt shown to the user
         # user_input: the user's profile
@@ -589,7 +589,7 @@ class InputManager:
             if dish_selection == 'y':
 
                 # Build record to save from just the allowed keys
-                plan_to_save = {key: plan[key] for key in self.PLAN_KEYS if key in plan}
+                plan_to_save = {key: plan[key] for key in self.__PLAN_KEYS if key in plan}
                 saved_successfully = self.__data_manager.save_record(user_input, plan_to_save)
 
                 if saved_successfully:
