@@ -6,13 +6,14 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
 
-
+# Custom exception for errors while reading or saving meal history
 class StorageError(Exception):
     pass
 
-
+# Abstract storage interface so the app can support different storage types
 class Storage(ABC):
 
+    # Every storage backend must provide a way to read saved records.
     @abstractmethod
     def load(self):
         pass
@@ -21,9 +22,10 @@ class Storage(ABC):
     def save(self, records):
         pass
 
-
+# JSON implementation of the storage interface
 class JSONStorage(Storage):
 
+    # Keep the JSON path inside this storage object rather than a global variable.
     def __init__(self, filename="meal_history.json"):
         self._filename = os.fspath(filename)
 
@@ -39,6 +41,7 @@ class JSONStorage(Storage):
         except (OSError, UnicodeError, json.JSONDecodeError) as exc:
             raise StorageError("Unable to read meal history") from exc
 
+    # Write to a temporary file first to avoid damaging existing history
     def save(self, records):
         if not isinstance(records, list) or any(not isinstance(r, dict) for r in records):
             raise StorageError("Records must be a list of dictionaries")
@@ -52,6 +55,7 @@ class JSONStorage(Storage):
             ) as file:
                 temporary_path = file.name
                 json.dump(records, file, indent=4, ensure_ascii=False, allow_nan=False)
+            # Only replace the real history after the temporary write succeeds.
             os.replace(temporary_path, self._filename)
             return True
         except (OSError, TypeError, ValueError) as exc:
@@ -63,7 +67,7 @@ class JSONStorage(Storage):
                 except OSError:
                     pass
 
-
+# Represents one saved meal plan and its remaining details
 @dataclass
 class MealPlan:
     id: int
@@ -73,6 +77,8 @@ class MealPlan:
     def to_dict(self):
         return {**self.details, "id": self.id, "name": self.name}
 
+    
+    # Rebuild a MealPlan object from a saved dictionary
     @classmethod
     def from_dict(cls, record):
         if not isinstance(record, dict):
@@ -85,7 +91,7 @@ class MealPlan:
             raise ValueError("Invalid meal-plan name")
         return cls(record_id, name.strip(), {k: v for k, v in record.items() if k not in ("id", "name")})
 
-
+# Main Data Manager for the shared meal history
 class Saved_MealPlans:
 
     def __init__(self, filename="meal_history.json", storage=None):
@@ -108,6 +114,7 @@ class Saved_MealPlans:
         ids = [r["id"] for r in records if type(r.get("id")) is int and r["id"] > 0]
         return max(ids, default=0) + 1
 
+    # Handle storage errors without overwriting corrupted files
     def _load_records(self):
         try:
             return self._storage.load()
@@ -120,6 +127,7 @@ class Saved_MealPlans:
         except StorageError:
             return False
 
+    # Validate and save an accepted meal plan; return its ID or None
     def add_MealPlan(self, plan, user_input=None):
         if isinstance(plan, MealPlan):
             plan = plan.to_dict()
@@ -164,15 +172,18 @@ class Saved_MealPlans:
         records.append(plan)
         return new_id if self._save_records(records) else None
 
+    # Retrieve the complete shared meal history as dictionaries
     def get_all_MealPlans(self):
         return self._load_records() or []
 
+    # Find one saved record using its ID
     def get_MealPlan(self, plan_id):
         for record in self.get_all_MealPlans():
             if str(record.get("id")) == str(plan_id):
                 return record
         return None
 
+    # Retrieve one saved record as a MealPlan object
     def get_MealPlan_object(self, plan_id):
         record = self.get_MealPlan(plan_id)
         if record is None:
@@ -182,6 +193,8 @@ class Saved_MealPlans:
         except ValueError:
             return None
 
+        
+    # Convert valid saved records into MealPlan objects
     def get_all_MealPlan_objects(self):
         plans = []
         for record in self.get_all_MealPlans():
@@ -202,7 +215,8 @@ class Saved_MealPlans:
                 record["name"] = new_name.strip()
                 return self._save_records(records)
         return False
-
+    
+    # Remove a saved plan by ID
     def delete_MealPlan(self, plan_id):
         records = self._load_records()
         if records is None:
@@ -220,6 +234,7 @@ class Saved_MealPlans:
         return [r for r in self.get_all_MealPlans()
                 if str(r.get("name", "")).strip().lower() == name]
 
+    # Return plans whose grocery costs are within the budget
     def filter_MealPlans_by_budget(self, max_budget):
         if not self._valid_amount(max_budget):
             return []
@@ -227,6 +242,7 @@ class Saved_MealPlans:
                 if self._valid_amount(r.get("Total_grocery_cost"))
                 and float(r["Total_grocery_cost"]) <= float(max_budget)]
 
+    # Search all stored record fields for the given keyword
     def search_MealPlan_by_keyword(self, word):
         if word is None or not str(word).strip():
             return []
