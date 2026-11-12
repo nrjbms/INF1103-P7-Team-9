@@ -1,26 +1,15 @@
-<<<<<<< Updated upstream
-import aiManager
-import dataManager
-import inputManager
-import logicManager
-=======
 import json
 from aiManager import GeminiAPI
 from inputManager import InputManager
 from Saved_MealPlans import Saved_MealPlans
 from logic.logic_manager import LogicManager
 from logic.user_profile import UserProfile
->>>>>>> Stashed changes
 
-inputManager.welcome_msg()
+# No dataManager functions is used yet as database is still being developed. 
+# Once the database is ready, the dataManager functions will be called to save and retrieve meal plans.
+# InputManager will aslo be updated
 
-while True:
-    choice = inputManager.main_menu()
 
-<<<<<<< Updated upstream
-    if choice is None:
-        continue
-=======
 class Main:
 
     __MEAL_PLANS = "meal_history.json"
@@ -107,18 +96,12 @@ class Main:
 
         return ai.call_api(prompt_type)
 
->>>>>>> Stashed changes
     
-    #Option 1: Generate Meal Plan
-    if choice == 1:
-        user_input = inputManager.main_input() #Input Prompt and Validation
 
-        if user_input is None: # Error Handling if user_input is empty
-            continue
+    # Option 1: Generate Meal Plan
+    def __generate_meal_plan(self):
+        user_input = self.__input_manager.main_input() 
 
-<<<<<<< Updated upstream
-        exclude = None # Initialise exclude as None, assuming user first generation
-=======
         if user_input is None:
             return
 
@@ -126,35 +109,19 @@ class Main:
         profile = UserProfile.from_input_list(user_input)
 
         exclude = None # assuming user first time generating a meal plan, no exclusions yet
->>>>>>> Stashed changes
 
         while True:
-            # Prompt Creation and Call for AI API
-            prompt = aiManager.craftprompt(user_input[2],user_input[1],user_input[7],exclude)
-            ai_output = aiManager.GeminiAPI(prompt)
+            ai = GeminiAPI(user_input[2], user_input[1], user_input[7], exclude)
 
-            # Error Handling if AI Output has an error
-            if "error" in ai_output:
-                print("Error found:", ai_output)
+            # Error Handling if the AI call fails
+            if not self.__request_ai(ai, "generate"):
 
                 #User regeneration request if error is found
-                if inputManager.ask_regenerate():
+                if self.__input_manager.ask_regenerate():
                     continue
                 else:
                     break
-            
-            # Logic Manager processes ai_output
-            plan = logicManager.get_filtered_plan(ai_output, user_input)
 
-<<<<<<< Updated upstream
-            inputManager.display_plan_messages(plan) # Flags and Rejects
-
-            #if AI output is all rejected for flagged, ask for regeneration
-            if plan["outcome"] == "REJECTED":
-                print("Unable to generate a valid meal plan.")
-
-                if inputManager.ask_regenerate():
-=======
             ai_output = ai.generate_meal_plan()
 
             # Logic Manager checks the AI output against the user's profile (Brandon)
@@ -166,106 +133,88 @@ class Main:
             #if AI output is all rejected for flagged, ask for regeneration
             if plan["outcome"] == "REJECTED":
                 if self.__input_manager.ask_regenerate():
->>>>>>> Stashed changes
                     continue
                 else:
                     break
 
-            inputManager.display_generated_meal_plan(user_input, plan)
+            self.__input_manager.display_generated_meal_plan(user_input, plan)
 
-            response, plan_to_save, exclude = inputManager.get_accept_reject_menu(plan, "Accept? (y/n): ", user_input ,dataManager)
-            
+            response, plan_to_save, exclude = self.__input_manager.get_accept_reject_menu(plan, "Accept? (y/n): ", user_input)
+
             # regenerate if user rejects meal plan
             if response == "n":
-                if inputManager.ask_regenerate():
+                if self.__input_manager.ask_regenerate():
                     continue
                 else:
                     exclude = None
                     break
 
             else:
-                print("Invalid response.")
+                # TO BE ADDED WITH NEW DATABASE METHODS
+                
+                
                 break
-
-    
-    elif choice == 2:
+            
+#OPtion 2: Manage Meal Plans
+    def __manage_meal_plans(self):
         while True:
             #Manage Meal Plan Menu
-            saved_choice = inputManager.manage_plans_menu()
+            saved_choice = self.__input_manager.manage_plans_menu()
 
             if saved_choice is None:
                 continue
             #Back to Main Menu
-            if saved_choice == 6:
+            if saved_choice == 7:
                 break
 
-            #View All Saved Meal Plans
-            elif saved_choice == 1:
-                meal_plans = "meal_history.json"
+            # Nothing to view, rename or delete if no plan has been saved yet
+            if saved_choice in (1, 4, 5) and not self.__saved_plans.get_all_MealPlans():#Need to change to new method for database
+                print("\nNo saved meal plans yet.")
+                continue
 
-                inputManager.display_all_plans(meal_plans)
-
-                selected_plan = inputManager.get_selected_plan(meal_plans)
-
-                if selected_plan is None:
-                    continue
-
-                inputManager.display_meal_plan(selected_plan)
-                inputManager.get_selected_recipe(selected_plan)
+            #View All Saved Meal Plans (New Methods to be added for database)
+            if saved_choice == 1:
+                yo = 1; #Added to avoided error line.
+                
 
             # Filter by Name
             elif saved_choice == 2:
-                name = inputManager.get_name_filter()
-
-                filtered_plans = dataManager.filter_by_name(name)
-
-                inputManager.display_filtered_plans(filtered_plans)
-
-                selected_plan = inputManager.get_selected_filtered_plan(filtered_plans)
-
-                if selected_plan is None:
-                    continue
-
-                inputManager.display_meal_plan(selected_plan)
-                inputManager.get_selected_recipe(selected_plan)
+                yo = 1; #Added to avoided error line.
 
             #Filter by Budget
             elif saved_choice == 3:
-                budget = inputManager.get_budget_filter()
-
-                filtered_plans = dataManager.filter_by_budget(budget)
-
-                inputManager.display_filtered_plans(filtered_plans)
-
-                selected_plan = inputManager.get_selected_filtered_plan(filtered_plans)
-
-                if selected_plan is None:
-                    continue
-
-                inputManager.display_meal_plan(selected_plan)
-                inputManager.get_selected_recipe(selected_plan)
+                yo = 1; #Added to avoided error line.
 
             #Change Name of Meal Plan
             elif saved_choice == 4:
-                meal_plans = "meal_history.json"
-
-                inputManager.display_all_plans(meal_plans)
-
-                selected_plan = inputManager.get_selected_plan(meal_plans)
-
-                if selected_plan is None:
-                    continue
-
-                new_name = inputManager.change_meal_plan_name(selected_plan)
-
-                if new_name:
-                    dataManager.update_meal_plan_name(selected_plan["id"], new_name)
+               yo = 1; #Added to avoided error line.
 
             # Delete Meal Plan
             elif saved_choice == 5:
-                inputManager.delete_meal_plan("meal_history.json")
+                yo = 1; #Added to avoided error line.
 
-    # Quit Program
-    elif choice == 3:
-        print("Goodbye!")
-        break
+            elif saved_choice == 6:
+                self.__get_feedback()
+                
+
+    
+    def __get_feedback(self):
+        # Will add later as need to retrieve from database and convert into json before feeding to AI API
+        return 0
+
+    # Option to save the improved meal plan
+    def __offer_to_save(self, plan, user_input):#basic structure for now, will be updated once database is ready
+        while True:
+            save_choice = input("\nSave this improved meal plan? (y/n): ").strip().lower()
+            
+            #calling of new function to save the improved meal plan into the database
+
+            if save_choice == "y":
+                y = 1; #Added to avoided error line.
+
+            elif save_choice == "n":
+                
+                return
+
+            else:
+                print("\nInvalid input. Please enter Y or N.")
