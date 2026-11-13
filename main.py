@@ -246,6 +246,10 @@ class Main:
             previous_plan.get("protein_count", 27),
             previous_plan.get("fat_count", 20),
         ]
+
+        # Build the profile from the saved plan so the improved plan is checked against the same choices
+        profile = UserProfile.from_input_list(self.__profile_input(user_input))
+
         # Keep the selected saved plan and profile when regenerating feedback.
         while True:
             ai = GeminiAPI(user_input[2], user_input[1], user_input[7], None)
@@ -277,16 +281,20 @@ class Main:
                     continue
                 return
 
-            # Logic Manager processes ai_output (Brandon To Add New Codes)
-            
-            # feedback variable will need to be changed into the processed one from logic
-            # Commented out as this output will not include an 'outcome'
-            # if feedback.get("outcome") in ("REJECTED", "FLAGGED"):
-            #     self.__input_manager.display_plan_messages(feedback)
-            #     print("The improved meal plan was rejected or flagged.")
-            #     if self.__input_manager.ask_regenerate():
-            #         continue
-            #     return
+            # Logic Manager checks the improved plan against the user's profile (Brandon)
+            checked_plan = self.__logic_manager.evaluate(feedback, profile)
+
+            # Show removed dishes, rejection reason and warnings
+            self.__input_manager.display_plan_messages(checked_plan)
+
+            if checked_plan["outcome"] == "REJECTED":
+                if self.__input_manager.ask_regenerate():
+                    continue
+                return
+
+            # Keep the AI's observation, but use the checked dishes, groceries and cost
+            for key in ("pax", "Total_grocery_cost", "Grocery_list", "Dishes"):
+                feedback[key] = checked_plan[key]
 
             self.__input_manager.display_feedback(feedback)
             if not isinstance(feedback.get("Dishes"), list) or not feedback["Dishes"]:
@@ -310,6 +318,15 @@ class Main:
         restrictions = values[3]
         if isinstance(restrictions, tuple):
             values[3] = list(restrictions)
+        return values
+
+    # Saved plans store goal and cuisine as "A, B" text; split them back into separate choices for the Logic Manager
+    @staticmethod
+    def __profile_input(user_input):
+        values = list(user_input)
+        for index in (3, 4, 6):
+            if isinstance(values[index], str):
+                values[index] = tuple(part.strip() for part in values[index].split(",") if part.strip())
         return values
 
     # Option to save the improved meal plan
