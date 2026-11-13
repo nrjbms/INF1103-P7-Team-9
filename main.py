@@ -2,25 +2,18 @@ import json
 from aiManager import GeminiAPI
 from inputManager import InputManager
 from Saved_MealPlans import Saved_MealPlans
+from mysql_storage import MySQLStorage
 from logic.logic_manager import LogicManager
 from logic.user_profile import UserProfile
-
-# No dataManager functions is used yet as database is still being developed. 
-# Once the database is ready, the dataManager functions will be called to save and retrieve meal plans.
-# InputManager will aslo be updated
 
 
 class Main:
 
-    __MEAL_PLANS = "meal_history.json"
-    __PLAN_KEYS = ("pax", "Total_grocery_cost", "Grocery_list", "Dishes")
-
     def __init__(self, test_mode=False):
         self.__test_mode = test_mode
-        self.__saved_plans = Saved_MealPlans()
-        self.__input_manager = InputManager()
+        self.__saved_plans = Saved_MealPlans(storage = MySQLStorage())
+        self.__input_manager = InputManager(self.__saved_plans)
         self.__logic_manager = LogicManager()
-
 
 
     # Test Mode Enabled function for test.py
@@ -150,71 +143,191 @@ class Main:
                     break
 
             else:
-                # TO BE ADDED WITH NEW DATABASE METHODS
-                
-                
+                saved_id = self.__saved_plans.add_MealPlan(plan_to_save, self.__sql_user_input(user_input))
+                if saved_id is None:
+                    print("Warning: Failed to save the meal plan.")
+                else:
+                    print(f"Meal plan saved successfully! ID: {saved_id}")
+                    # Export the saved record with its database ID and date.
+                    saved_plan = self.__saved_plans.get_MealPlan(saved_id)
+                    self.__input_manager.offer_pdf_export(saved_plan or plan_to_save, user_input)
                 break
             
 #OPtion 2: Manage Meal Plans
     def __manage_meal_plans(self):
         while True:
-            #Manage Meal Plan Menu
             saved_choice = self.__input_manager.manage_plans_menu()
-
             if saved_choice is None:
                 continue
-            #Back to Main Menu
-            if saved_choice == 7:
+            if saved_choice == 8:
                 break
 
-            # Nothing to view, rename or delete if no plan has been saved yet
-            if saved_choice in (1, 4, 5) and not self.__saved_plans.get_all_MealPlans():#Need to change to new method for database
+            records = self.__saved_plans.get_all_MealPlans()
+            if saved_choice in (1, 4, 5, 7) and not records:
                 print("\nNo saved meal plans yet.")
                 continue
 
-            #View All Saved Meal Plans (New Methods to be added for database)
             if saved_choice == 1:
-                yo = 1; #Added to avoided error line.
-                
+                self.__input_manager.display_all_plans(records)
+                selected = self.__input_manager.get_selected_plan(records)
+                if selected is not None:
+                    self.__view_saved_plan(selected)
 
-            # Filter by Name
             elif saved_choice == 2:
-                yo = 1; #Added to avoided error line.
+                name = self.__input_manager.get_name_filter()
+                matches = self.__saved_plans.filter_MealPlans_by_name(name)
+                self.__view_filtered_plans(matches)
 
-            #Filter by Budget
             elif saved_choice == 3:
-                yo = 1; #Added to avoided error line.
+                budget = self.__input_manager.get_budget_filter()
+                matches = self.__saved_plans.filter_MealPlans_by_budget(budget)
+                self.__view_filtered_plans(matches)
 
-            #Change Name of Meal Plan
             elif saved_choice == 4:
-               yo = 1; #Added to avoided error line.
+                self.__input_manager.display_all_plans(records)
+                selected = self.__input_manager.get_selected_plan(records)
+                if selected is not None:
+                    new_name = self.__input_manager.change_meal_plan_name(selected)
+                    if self.__saved_plans.rename_MealPlan(selected["id"], new_name):
+                        print("Meal plan renamed successfully!")
+                    else:
+                        print("Unable to rename meal plan.")
 
-            # Delete Meal Plan
             elif saved_choice == 5:
-                yo = 1; #Added to avoided error line.
+                selected_id = self.__input_manager.delete_meal_plan(records)
+                if selected_id is not None:
+                    if self.__saved_plans.delete_MealPlan(selected_id):
+                        print("Meal plan deleted successfully!")
+                    else:
+                        print("Unable to delete meal plan.")
 
             elif saved_choice == 6:
                 self.__get_feedback()
-                
 
-    
+            elif saved_choice == 7:
+                self.__input_manager.display_all_plans(records)
+                selected = self.__input_manager.get_selected_plan(records)
+                if selected is not None:
+                    self.__input_manager.offer_pdf_export(selected)
+
+    def __view_saved_plan(self, plan):
+        self.__input_manager.display_meal_plan(plan)
+        self.__input_manager.get_selected_recipe(plan)
+
+    def __view_filtered_plans(self, plans):
+        self.__input_manager.display_filtered_plans(plans)
+        if plans:
+            selected = self.__input_manager.get_selected_filtered_plan(plans)
+            if selected is not None:
+                self.__view_saved_plan(selected)
+
     def __get_feedback(self):
-        # Will add later as need to retrieve from database and convert into json before feeding to AI API
-        return 0
+        # Retrieve saved plans before requesting feedback from the AI
+        records = self.__saved_plans.get_all_MealPlans()
+        if not records:
+            print("\nNo saved meal plans available for feedback.")
+            return
 
-    # Option to save the improved meal plan
-    def __offer_to_save(self, plan, user_input):#basic structure for now, will be updated once database is ready
+        self.__input_manager.display_all_plans(records)
+        previous_plan = self.__input_manager.get_selected_plan(records)
+        if previous_plan is None:
+            return
+
+        # Use the saved profile details to configure the feedback request
+        user_input = [
+            previous_plan.get("name", "User"),
+            previous_plan.get("budget", 0),
+            previous_plan.get("pax", 1),
+            previous_plan.get("dietary_restrictions", ("None",)),
+            previous_plan.get("dietary_goal", ("Standard",)),
+            previous_plan.get("calorie_count", 650),
+            previous_plan.get("cuisine", ("Anything",)),
+            previous_plan.get("country", "Singapore"),
+            previous_plan.get("protein_count", 27),
+            previous_plan.get("fat_count", 20),
+        ]
+        # Keep the selected saved plan and profile when regenerating feedback.
         while True:
-            save_choice = input("\nSave this improved meal plan? (y/n): ").strip().lower()
-            
-            #calling of new function to save the improved meal plan into the database
-
-            if save_choice == "y":
-                y = 1; #Added to avoided error line.
-
-            elif save_choice == "n":
-                
+            ai = GeminiAPI(user_input[2], user_input[1], user_input[7], None)
+            if not self.__request_ai(ai, "feedback", previous_plan):
+                print("Unable to generate feedback. Please try again.")
+                if self.__input_manager.ask_regenerate():
+                    continue
                 return
 
+            feedback = ai.generate_meal_plan()
+            if isinstance(feedback, str):
+                try:
+                    feedback = json.loads(feedback)
+                except json.JSONDecodeError:
+                    print("Unable to read the AI feedback.")
+                    if self.__input_manager.ask_regenerate():
+                        continue
+                    return
+
+            if not isinstance(feedback, dict):
+                print("The AI returned an invalid feedback response.")
+                if self.__input_manager.ask_regenerate():
+                    continue
+                return
+
+            if feedback.get("Error") and str(feedback["Error"]).strip().lower() not in ("none", "null", "no error", "n/a", "", "false", "nil", "na"):
+                print("Feedback error:", feedback["Error"])
+                if self.__input_manager.ask_regenerate():
+                    continue
+                return
+
+            # Logic Manager processes ai_output (Brandon To Add New Codes)
+            
+            # feedback variable will need to be changed into the processed one from logic
+            # Commented out as this output will not include an 'outcome'
+            # if feedback.get("outcome") in ("REJECTED", "FLAGGED"):
+            #     self.__input_manager.display_plan_messages(feedback)
+            #     print("The improved meal plan was rejected or flagged.")
+            #     if self.__input_manager.ask_regenerate():
+            #         continue
+            #     return
+
+            self.__input_manager.display_feedback(feedback)
+            if not isinstance(feedback.get("Dishes"), list) or not feedback["Dishes"]:
+                print("No improved dishes were returned to save.")
+                if self.__input_manager.ask_regenerate():
+                    continue
+                return
+
+            self.__offer_to_save(feedback, user_input)
+            return
+
+    # Convert menu choices into database-compatible values before saving.
+    # dietary_goal and cuisine are VARCHAR columns; restrictions are JSON.
+    @staticmethod
+    def __sql_user_input(user_input):
+        values = list(user_input)
+        for index in (4, 6):
+            choice = values[index]
+            if isinstance(choice, (tuple, list)):
+                values[index] = ", ".join(str(item) for item in choice)
+        restrictions = values[3]
+        if isinstance(restrictions, tuple):
+            values[3] = list(restrictions)
+        return values
+
+    # Option to save the improved meal plan
+    def __offer_to_save(self, plan, user_input):
+        while True:
+            save_choice = self.__input_manager.ask_save_improved_plan()
+            if not save_choice:
+                print("Improved meal plan was not saved.")
+                self.__input_manager.offer_pdf_export(plan, user_input)
+                return
+
+            # Save as a new plan; the original saved meal plan is not overwritten.
+            saved_id = self.__saved_plans.add_MealPlan(plan, self.__sql_user_input(user_input))
+            
+            if saved_id is None:
+                print("Warning: Failed to save the improved meal plan.")
             else:
-                print("\nInvalid input. Please enter Y or N.")
+                print(f"Improved meal plan saved successfully! ID: {saved_id}")
+                saved_plan = self.__saved_plans.get_MealPlan(saved_id)
+                self.__input_manager.offer_pdf_export(saved_plan or plan, user_input)
+            return

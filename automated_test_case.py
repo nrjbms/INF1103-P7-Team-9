@@ -10,7 +10,7 @@ def tester(testcasename, user_inputs,expected_output):
     #types the inputs into the terminal
     format_input = "\n".join(str(inputs) for inputs in user_inputs) + "\n"
     process = subprocess.run(
-        [sys.executable, "main.py"],
+        [sys.executable, "justeat.py"],
         input = format_input,
         capture_output = True,
         text = True

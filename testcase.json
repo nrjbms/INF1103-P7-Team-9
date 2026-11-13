@@ -2,7 +2,7 @@
     {
         "Test Case Name": "Exit Program",
         "Inputs": [
-            "3"
+            "4"
         ],
         "Expected_Output": "Goodbye!"
     },
@@ -10,7 +10,7 @@
         "Test Case Name": "Invalid Menu Choice",
         "Inputs": [
             "s",
-            "3"
+            "4"
         ],
         "Expected_Output": "Goodbye!"
     },
@@ -29,13 +29,13 @@
             "Jannah",
             "50",
             "abc",
-            "1",
+            "2",
             "",
-            "1",
             "",
             "1",
             "Singapore",
-            "3"
+            "no",
+            "4"
         ],
         "Expected_Output": "Please enter a valid number"
     },
@@ -43,25 +43,25 @@
         "Test Case Name": "Main Menu: Non-numeric Choice",
         "Inputs": [
             "abc",
-            "3"
+            "4"
         ],
-        "Expected_Output": "Invalid choice. Please select 1-3."
+        "Expected_Output": "Invalid choice. Please select 1-4."
     },
     {
         "Test Case Name": "Main Menu: Zero Choice",
         "Inputs": [
             "0",
-            "3"
+            "4"
         ],
-        "Expected_Output": "Invalid choice. Please select 1-3."
+        "Expected_Output": "Invalid choice. Please select 1-4."
     },
     {
         "Test Case Name": "Main Menu: Above Range Choice",
         "Inputs": [
-            "4",
-            "3"
+            "5",
+            "4"
         ],
-        "Expected_Output": "Invalid choice. Please select 1-3."
+        "Expected_Output": "Invalid choice. Please select 1-4."
     },
     {
         "Test Case Name": "Name: Empty Input",
@@ -82,24 +82,6 @@
             "3"
         ],
         "Expected_Output": "Name cannot be empty. Please try again."
-    },
-    {
-        "Test Case Name": "Name: Quit",
-        "Inputs": [
-            "1",
-            "quit",
-            "3"
-        ],
-        "Expected_Output": "Goodbye!"
-    },
-    {
-        "Test Case Name": "Name: Quit Uppercase",
-        "Inputs": [
-            "1",
-            "QUIT",
-            "3"
-        ],
-        "Expected_Output": "Goodbye!"
     },
     {
         "Test Case Name": "Name: Valid Name",
@@ -553,20 +535,20 @@
         "Inputs": [
             "2",
             "abc",
-            "6",
-            "3"
+            "8",
+            "4"
         ],
-        "Expected_Output": "Invalid choice. Please select 1-6."
+        "Expected_Output": "Invalid choice. Please select 1-8."
     },
     {
         "Test Case Name": "Manage Menu: Above Range",
         "Inputs": [
             "2",
-            "7",
-            "6",
-            "3"
+            "9",
+            "8",
+            "4"
         ],
-        "Expected_Output": "Invalid choice. Please select 1-6."
+        "Expected_Output": "Invalid choice. Please select 1-8."
     },
     {
         "Test Case Name": "Select Plan: Non-numeric ID",
@@ -575,8 +557,8 @@
             "1",
             "abc",
             "back",
-            "6",
-            "3"
+            "8",
+            "4"
         ],
         "Expected_Output": "Invalid input. Please enter a valid ID."
     },
@@ -587,8 +569,8 @@
             "1",
             "9999",
             "back",
-            "6",
-            "3"
+            "8",
+            "4"
         ],
         "Expected_Output": "Invalid input. Please enter a valid ID."
     },
@@ -598,8 +580,8 @@
             "2",
             "1",
             "BACK",
-            "6",
-            "3"
+            "8",
+            "4"
         ],
         "Expected_Output": "Goodbye!"
     },
@@ -611,10 +593,10 @@
             "1",
             "abc",
             "back",
-            "6",
-            "3"
+            "8",
+            "4"
         ],
-        "Expected_Output": "Invalid input. Please enter a valid number."
+        "Expected_Output": "Invalid input. Please enter a valid number or 'back'."
     },
     {
         "Test Case Name": "Select Recipe: Out of Range",
@@ -624,10 +606,10 @@
             "1",
             "999",
             "back",
-            "6",
-            "3"
+            "8",
+            "4"
         ],
-        "Expected_Output": "Invalid input. Please enter a valid number."
+        "Expected_Output": "Invalid input. Please enter a valid number or 'back'."
     },
     {
         "Test Case Name": "Filter Name: No Match",
@@ -635,8 +617,8 @@
             "2",
             "2",
             "zzzz",
-            "6",
-            "3"
+            "8",
+            "4"
         ],
         "Expected_Output": "No matching meal plans found."
     },
@@ -646,10 +628,11 @@
             "2",
             "2",
             "",
-            "6",
-            "3"
+            "testnonexistentname987",
+            "8",
+            "4"
         ],
-        "Expected_Output": "No meal plans available to select."
+        "Expected_Output": "Name cannot be empty. Please try again."
     },
     {
         "Test Case Name": "Filter Budget: Non-numeric",
@@ -658,8 +641,8 @@
             "3",
             "abc",
             "0",
-            "6",
-            "3"
+            "8",
+            "4"
         ],
         "Expected_Output": "Invalid budget. Please enter a number."
     },
@@ -670,8 +653,8 @@
             "3",
             "-5",
             "0",
-            "6",
-            "3"
+            "8",
+            "4"
         ],
         "Expected_Output": "Budget cannot be negative."
     },
@@ -681,23 +664,22 @@
             "2",
             "3",
             "0",
-            "6",
-            "3"
+            "8",
+            "4"
         ],
         "Expected_Output": "No matching meal plans found."
     },
     {
-        "Test Case Name": "Filter Budget: Invalid Plan ID",
+        "Test Case Name": "Filter Budget: Negative Then No Match",
         "Inputs": [
             "2",
             "3",
-            "100000",
-            "abc",
-            "back",
-            "6",
-            "3"
+            "-1",
+            "0",
+            "8",
+            "4"
         ],
-        "Expected_Output": "Invalid ID. Please select a plan from the displayed results."
+        "Expected_Output": "No matching meal plans found."
     },
     {
         "Test Case Name": "Rename Plan: Empty Name",
@@ -726,8 +708,8 @@
             "5",
             "abc",
             "back",
-            "6",
-            "3"
+            "8",
+            "4"
         ],
         "Expected_Output": "Invalid input. Please enter a valid ID."
     },
@@ -739,8 +721,8 @@
             "1",
             "maybe",
             "no",
-            "6",
-            "3"
+            "8",
+            "4"
         ],
         "Expected_Output": "Invalid input. Please enter Yes or No."
     },
@@ -751,9 +733,81 @@
             "5",
             "1",
             "no",
-            "6",
-            "3"
+            "8",
+            "4"
         ],
         "Expected_Output": "Deletion cancelled."
+    },
+    {
+        "Test Case Name": "Main Menu: Feedback Option Displayed",
+        "Inputs": [
+            "4"
+        ],
+        "Expected_Output": "3. Get Feedback on a Previous Meal Plan"
+    },
+    {
+        "Test Case Name": "Main Menu: Exit Option Displayed",
+        "Inputs": [
+            "4"
+        ],
+        "Expected_Output": "4. Exit"
+    },
+    {
+        "Test Case Name": "Manage Menu: PDF Export Option Displayed",
+        "Inputs": [
+            "2",
+            "8",
+            "4"
+        ],
+        "Expected_Output": "7. Export Meal Plan to PDF"
+    },
+    {
+        "Test Case Name": "Manage Menu: Feedback Option Displayed",
+        "Inputs": [
+            "2",
+            "8",
+            "4"
+        ],
+        "Expected_Output": "6. Get Feedback"
+    },
+    {
+        "Test Case Name": "Manage Menu: Back Option Displayed",
+        "Inputs": [
+            "2",
+            "8",
+            "4"
+        ],
+        "Expected_Output": "8. Back to Main Menu"
+    },
+    {
+        "Test Case Name": "Manage Menu: PDF Export Selection",
+        "Inputs": [
+            "2",
+            "7",
+            "back",
+            "8",
+            "4"
+        ],
+        "Expected_Output": "7. Export Meal Plan to PDF"
+    },
+    {
+        "Test Case Name": "Manage Menu: Invalid Zero",
+        "Inputs": [
+            "2",
+            "0",
+            "8",
+            "4"
+        ],
+        "Expected_Output": "Invalid choice. Please select 1-8."
+    },
+    {
+        "Test Case Name": "Manage Menu: Invalid Nine",
+        "Inputs": [
+            "2",
+            "9",
+            "8",
+            "4"
+        ],
+        "Expected_Output": "Invalid choice. Please select 1-8."
     }
 ]
