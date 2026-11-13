@@ -94,7 +94,6 @@ class Main:
 
         if user_input is None:
             return
-        
 
         exclude = None # assuming user first time generating a meal plan, no exclusions yet
 
@@ -116,13 +115,14 @@ class Main:
             plan = ai_output  # Placeholder for actual logic processing
 
             #if AI output is all rejected for flagged, ask for regeneration
-            if plan["outcome"] == "REJECTED":
-                print("Unable to generate a valid meal plan.")
+            # Commented out as this output will not include an 'outcome'
+            # if plan["outcome"] == "REJECTED":
+            #     print("Unable to generate a valid meal plan.")
 
-                if self.__input_manager.ask_regenerate():
-                    continue
-                else:
-                    break
+            #     if self.__input_manager.ask_regenerate():
+            #         continue
+            #     else:
+            #         break
 
             self.__input_manager.display_generated_meal_plan(user_input, plan)
 
@@ -272,13 +272,15 @@ class Main:
                 return
 
             # Logic Manager processes ai_output (Brandon To Add New Codes)
-            # Leave Logic Manager integration to Brandon.
-            if feedback.get("outcome") in ("REJECTED", "FLAGGED"):
-                self.__input_manager.display_plan_messages(feedback)
-                print("The improved meal plan was rejected or flagged.")
-                if self.__input_manager.ask_regenerate():
-                    continue
-                return
+            
+            # feedback variable will need to be changed into the processed one from logic
+            # Commented out as this output will not include an 'outcome'
+            # if feedback.get("outcome") in ("REJECTED", "FLAGGED"):
+            #     self.__input_manager.display_plan_messages(feedback)
+            #     print("The improved meal plan was rejected or flagged.")
+            #     if self.__input_manager.ask_regenerate():
+            #         continue
+            #     return
 
             self.__input_manager.display_feedback(feedback)
             if not isinstance(feedback.get("Dishes"), list) or not feedback["Dishes"]:
