@@ -4,7 +4,7 @@ import re
 import pdfmaker
 
 class InputManager:
-    def __init__(self, data_manager):
+    def __init__(self, data_manager = None):
         self.__data_manager = data_manager
     # Welcome Message to JustEat
     def welcome_msg(self):
@@ -229,7 +229,7 @@ class InputManager:
             if not name_input:
                 print("Name cannot be empty. Please try again.")
                 continue
-            if name_input == "quit":
+            if name_input.lower() == "quit":
                 return None
             else:
                 print("Welcome: ", name_input)
@@ -281,20 +281,6 @@ class InputManager:
             print("="*40)
             return all_input
 
-    # Main Menu 
-    def main_menu(self):
-        print("\nMain Menu")
-        print("-" * 30)
-        print("1. Generate Meal Plan\n2. Manage Meal Plans\n3. Exit")
-
-        while True:
-            choice = input("\nPlease select an option (1-3): ").strip()
-
-            if choice.isdigit() and 1 <= int(choice) <= 3:
-                return int(choice)
-
-            print("Invalid choice. Please select 1-3.")
-
 
 
     # Printing AI Output
@@ -303,7 +289,6 @@ class InputManager:
         print()
         print(f"Meal Plan for {user_input[0]}")
         print("-" * 30)
-
 
         print(f"\nBudget: ${user_input[1]:.2f}")
         print(f"Pax: {user_input[2]}")
@@ -314,8 +299,6 @@ class InputManager:
         print(f"Fats: {user_input[9]}g")
         print(f"Cuisine: {user_input[6]}")
         print(f"Country: {user_input[7]}")
-    
-
 
         print(f"\nTotal Grocery Cost: ${ai_output['Total_grocery_cost']:.2f}")
 
@@ -338,7 +321,7 @@ class InputManager:
             )
 
 
-    # Display One Meal Plans
+    # Display One Meal Plan
     def display_meal_plan(self, plan):
 
         print()
@@ -364,45 +347,46 @@ class InputManager:
                 f"Est. Price: ${recipe['price_per_meal']:.2f}"
             )
 
-    # Loop for printing all saved meal plans
+    # Display saved meal plans supplied by the data manager
     def display_all_plans(self, meal_plans):
+        print("\nSaved Meal Plans")
         print("-" * 30)
-        print("Saved Meal Plans")
-        print("-" * 30)
+        
+        if not meal_plans:
+            print("No saved meal plans yet.")
+            return
+        
+        for plan in meal_plans:
+            self.__print_plan_summary(plan)
 
-        with open(meal_plans, "r") as file:
-            plans = json.load(file)
+    def __print_plan_summary(self, plan):
+        
+        cost = plan.get("Total_grocery_cost")
+        
+        cost_text = f"${float(cost):.2f}" if cost is not None else "N/A"
+        
+        print(f"{plan.get('id', 'N/A')}: Meal Plan for {plan.get('name', 'N/A')} "
+              f"({plan.get('pax', 'N/A')} pax) - {cost_text} "
+              f"[{plan.get('date', 'N/A')}]")
 
-            for plan in plans:
-                print(
-                    f"{plan.get('id', 'N/A')}: Meal Plan for {plan.get('name', 'N/A')} "
-                    f"({plan.get('pax', 'N/A')} pax) - "
-                    f"${plan.get('Total_grocery_cost', 'N/A'):.2f} "
-                    f"[{plan.get('date', 'N/A')}]"
-                )
-
-    # Validation and ask for id of which plan user wants to edit or view
+    # Select an existing plan from the supplied records
     def get_selected_plan(self, meal_plans):
-        with open(meal_plans, "r") as file:
-            plans = json.load(file)
-
+        
+        if not meal_plans:
+            print("No meal plans available to select.")
+            return None
+        
         while True:
-            choice = input(
-                "\nEnter the ID of the meal plan you want to edit/delete/view "
-                "(or 'back' to return to the main menu): "
-            )
-
+            choice = input("\nEnter a meal plan ID (or 'back' to return): ").strip()
+            
             if choice.lower() == "back":
                 return None
-
-            if choice.isdigit():
-                choice = int(choice)
-
-                for plan in plans:
-                    if plan.get('id') == choice:
-                        return plan
-
-            print("\nInvalid input. Please enter a valid ID.")
+            
+            for plan in meal_plans:
+                if str(plan.get("id")) == choice:
+                    return plan
+                
+            print("Invalid input. Please enter a valid ID.")
 
     # display recipe details for one meal plan
     def display_recipe_details(self, recipe):
@@ -423,24 +407,58 @@ class InputManager:
             if instruction.strip():
                 print(instruction.strip())
 
-    # validation for what recipe user would like to view 
+    # Export a generated, saved, or improved meal plan as a PDF.
+    def offer_pdf_export(self, plan, user_input=None):
+        
+        while True:
+            answer = input("\nExport this meal plan as a PDF? (y/n): ").strip().lower()
+            if answer in ("n", "no"):
+                return False
+            if answer in ("y", "yes"):
+                
+                if not isinstance(plan, dict):
+                    print("No valid meal plan available to export.")
+                    return False
+                
+                export_plan = plan.copy()
+                
+                if user_input is not None:
+                    export_plan.setdefault("name", user_input[0])
+                    export_plan.setdefault("pax", user_input[2])
+                    
+                export_plan.setdefault("name", "User")
+                export_plan.setdefault("pax", 1)
+                export_plan.setdefault("date", __import__("datetime").date.today().isoformat())
+                
+                filename = input("Enter filename for the PDF: ").strip()
+                if filename == "":
+                    print("Filename cannot be empty. Please try again.")
+                    continue
+                
+                try:
+                    pdfmaker.PDF(export_plan, filename).makepdf()
+                except (OSError, ValueError, TypeError, KeyError, ImportError) as error:
+                    print(f"Unable to export PDF: {error}")
+                    return False
+                
+                print(f"PDF exported: {filename}.pdf")
+                return True
+            
+            print("Invalid input. Please enter Y or N.")
+
+    # validation for what recipe user would like to view
     def get_selected_recipe(self, plan):
         while True:
             choice = input(
-                "\nEnter the number of the recipe you want to view "
-                "(or 'print' to print the entire grocery list or 'back' to return to the meal plan): "
-            )
-
-            if choice.lower() == "back":
+                "\nEnter a recipe number to view ('back' to return): ").strip().lower()
+            
+            if choice == "back":
                 return False
-            elif choice.lower() == "print":
-                filename = f"meal_plan_{plan.get('id', 'new')}"
-                pdfmaker.PDF(plan, filename).makepdf()
-                return False
-            if choice.isdigit() and 1 <= int(choice) <= len(plan["Dishes"]):
+            
+            if choice.isdigit() and 1 <= int(choice) <= len(plan.get("Dishes", [])):
                 self.display_recipe_details(plan["Dishes"][int(choice) - 1])
             else:
-                print("\nInvalid input. Please enter a valid number.")
+                print("\nInvalid input. Please enter a valid number or 'back'.")
 
     # Option 2: Manage Meal Plans menu            
     def manage_plans_menu(self):
@@ -451,51 +469,33 @@ class InputManager:
         print("3. Filter by Budget")
         print("4. Rename Meal Plan")
         print("5. Delete Meal Plan")
-        print("6. Back to Main Menu")
+        print("6. Get Feedback")
+        print("7. Export Meal Plan to PDF")
+        print("8. Back to Main Menu")
 
-        choice = input("\nPlease select an option (1-6): ")
+        choice = input("\nPlease select an option (1-8): ")
 
-        if choice.isdigit() and 1 <= int(choice) <= 6:
+        if choice.isdigit() and 1 <= int(choice) <= 8:
             return int(choice)
 
-        print("Invalid choice. Please select 1-6.")
+        print("Invalid choice. Please select 1-8.")
         return None
 
 
-    # Displaying filtered meal plans
+    # Display filtered meal plans and select from the results
     def display_filtered_plans(self, filtered_plans):
         print("\nFiltered Saved Meal Plans")
         print("-" * 50)
-
+        
         if not filtered_plans:
             print("No matching meal plans found.")
             return
-
-        for plan in filtered_plans:
-            print(
-                    f"{plan.get('id', 'N/A')}: Meal Plan for {plan.get('name', 'N/A')} "
-                    f"({plan.get('pax', 'N/A')} pax) - "
-                    f"${plan.get('Total_grocery_cost', 'N/A'):.2f} "
-                    f"[{plan.get('date', 'N/A')}]"
-                )
         
-    #validation for meal plan user would like to see.
+        for plan in filtered_plans:
+            self.__print_plan_summary(plan)
+
     def get_selected_filtered_plan(self, filtered_plans):
-        if not filtered_plans:
-            print("No meal plans available to select.")
-            return None
-
-        while True:
-            choice = input("\nEnter the ID of the meal plan to view, or 'back' to go back: ")
-
-            if choice.lower() == "back":
-                return None
-
-            for plan in filtered_plans:
-                if str(plan.get("id")) == choice:
-                    return plan
-
-            print("\nInvalid ID. Please select a plan from the displayed results.")
+        return self.get_selected_plan(filtered_plans)
 
     # regeneration prompt and validation
     def ask_regenerate(self):
@@ -523,35 +523,36 @@ class InputManager:
             else:
                 print("\nName cannot be empty. Please try again.")
 
-    #validation to delete meal plan
+    # Confirm deletion; the Main class handles storage changes
     def delete_meal_plan(self, meal_plans):
         self.display_all_plans(meal_plans)
-        print("\nDelete Meal Plan")
-
+        
         selected_plan = self.get_selected_plan(meal_plans)
-
+        
         if selected_plan is None:
-            return
-
-        print(f"\nSelected meal plan: \n{selected_plan.get('name', 'N/A')}")
-
+            return None
+        
+        print(f"\nSelected meal plan: {selected_plan.get('name', 'N/A')}")
+        
         while True:
-            confirm = input("\nAre you sure you want to delete this meal plan? (yes/no): ").strip().lower()
-
+            confirm = input("Are you sure you want to delete this meal plan? (yes/no): ").strip().lower()
+            
             if confirm == "yes":
-                self.__data_manager.delete_meal_plan(selected_plan["id"])
-                return
-
-            elif confirm == "no":
-                print("\nDeletion cancelled.")
-                return
-
-            else:
-                print("\nInvalid input. Please enter Yes or No.")
+                return selected_plan["id"]
+            
+            if confirm == "no":
+                print("Deletion cancelled.")
                 
-    # input for name for filtering to match for dataManager function
+                return None
+            print("Invalid input. Please enter Yes or No.")
+
+    # input validationfor name for filtering to match for dataManager function
     def get_name_filter(self):
-        return input("\nEnter the name to search for: ").strip()
+        user_input = input("\nEnter the name to search for: ").strip()
+        if user_input == "":
+            print("\nName cannot be empty. Please try again.")
+            return self.get_name_filter()
+        return user_input
 
     # input validation for budget for filtering to match for dataManager function
     def get_budget_filter(self):
@@ -573,83 +574,44 @@ class InputManager:
         # dish_selection_prompt: the y/n prompt shown to the user
         # user_input: the user's profile
     def get_accept_reject_menu(self, plan, dish_selection_prompt, user_input):
-
-        # Guard against a missing/invalid plan so .get() below never fails
+        
+        # Saving is handled by Main through Saved_MealPlans.
         if not isinstance(plan, dict):
             plan = {}
-
-        # Keeps only well-formed dishes (dicts); skips anything else in the list
-        dishes = [dish for dish in plan.get("Dishes", []) if isinstance(dish, dict)]
-
-        # Loops until user selects a y/n
+            
         while True:
-            # Ask users to accept or reject meal plan
-            dish_selection = input(dish_selection_prompt).strip().lower()
-
-            if dish_selection == 'y':
-
-                # Build record to save from just the allowed keys
+            response = input(dish_selection_prompt).strip().lower()
+            
+            if response == "y":
                 plan_to_save = {key: plan[key] for key in self.__PLAN_KEYS if key in plan}
-                saved_successfully = self.__data_manager.save_record(user_input, plan_to_save)
+                self.view_generated_recipes(plan, user_input)
+                return "y", plan_to_save, None
+            
+            if response == "n":
+                exclude = input("What would you like excluded? ").strip()
+                print("Excluded:", exclude)
+                return "n", None, exclude
+            print("Error. Please select y/n.")
 
-                if saved_successfully:
-                    print("Record saved successfully!")
-                else:
-                    print("Warning: Failed to save the record data.")
-
-                # Allows user to view the recipe for the dish they would like
-                if not dishes:
-                    print("No dishes available to view.")
-                else:
-                    # Show the numbered dish list once so the user knows what to pick from
-                    print("\nDishes in your plan:")
-                    for i, dish in enumerate(dishes, 1):
-                        print(f"{i}. {dish.get('dish_name', 'Unnamed dish')}")
-
-                    # Loops the recipe viewing to allow user to view any or every recipe until the user is satisfied
-                    while True:
-                        choice = input("\nEnter the number of a dish to view its recipe (or press Enter to finish): ").strip()
-    
-                        # Press Enter to end the recipe viewing
-                        if choice == "":
-                            break
-    
-                        # Validates input as a whole number within the list range
-                        if not choice.isdigit() or not (1 <= int(choice) <= len(dishes)):
-                            print(f"Invalid dish number. Please enter a number between 1 and {len(dishes)}.")
-                            continue
-    
-                        # The user sees 1-based numbers; the list is 0-based
-                        dish = dishes[int(choice) - 1]
-                        print(f"\n--- Recipe for {dish.get('dish_name', 'Unnamed dish')} ---")
-    
-                        # If ingredients is a list, show it as a clean string; comma-separated string instead of ['rice', 'egg']
-                        ingredients = dish.get("ingredients", "Ingredients not found")
-                        if isinstance(ingredients, (list, tuple)):
-                            ingredients = ", ".join(str(item) for item in ingredients)
-                        print(f"Ingredients: {ingredients}")
-    
-                        # .get() with a default avoids a KeyError if the recipe is missing; str() avoids a TypeError if it isn't a string
-                        recipe = str(dish.get("recipe", "Recipe not found"))
-    
-                        # Split the recipe into numbered steps. The lookahead (?=\d+\.\s) splits just before each "1. ", "2. " etc. while keeping the number attached to its step.
-                        for instruction in re.split(r"(?=\d+\.\s)", recipe):
-                            # Skip empty spaces (e.g. before the first step)
-                            if instruction.strip():
-                                print(instruction.strip())
-    
-                print("Thank you for using our service.")
-                return 'y', plan_to_save, dishes
-
-            elif dish_selection == 'n':
-                print("We are sorry for the inconvenience.")
-                # prompts users for any exclusion
-                ingredient_exclude = input("What would you like excluded? ")
-                print("Excluded: ", ingredient_exclude)
-                return 'n', None, ingredient_exclude
-
+    def view_generated_recipes(self, plan, user_input=None):
+        dishes = [d for d in plan.get("Dishes", []) if isinstance(d, dict)]
+        
+        if not dishes:
+            print("No dishes available to view.")
+            return
+        print("\nDishes in your plan:")
+        for index, dish in enumerate(dishes, 1):
+            print(f"{index}. {dish.get('dish_name', 'Unnamed dish')}")
+        while True:
+            choice = input("Enter a dish number to view its recipe, or 'back' to return: ").strip()
+            if not choice:
+                return
+            if choice.lower() == "back":
+                return
+            elif choice.isdigit() and 1 <= int(choice) <= len(dishes):
+                self.display_recipe_details(dishes[int(choice) - 1])
             else:
-                print("Error. Please select y/n.")
+                print("Invalid dish number.")
 
     # Show the logic manager's results: removed dishes, rejection reason and warnings (brandon)
     def display_plan_messages(self, plan):
@@ -662,3 +624,44 @@ class InputManager:
 
         for warning in plan.get("warnings", []):
             print("Warning:", warning)
+            
+            
+    # Display AI feedback and the improved meal plan
+    def display_feedback(self, feedback):
+        print("\nNutritional Feedback")
+        print("-" * 30)
+        print(feedback.get("observation") or "No nutritional observation provided.")
+
+        print("\nSuggested Improved Meal Plan")
+        print("-" * 30)
+        
+        cost = feedback.get("Total_grocery_cost", 0)
+        
+        try:
+            print(f"Total Grocery Cost: ${float(cost):.2f}")
+        except (TypeError, ValueError):
+            print(f"Total Grocery Cost: {cost}")
+
+        print("\nGrocery List:")
+        for item in feedback.get("Grocery_list", []):
+            if isinstance(item, dict):
+                print(f"- {item.get('ingredient_name', 'Unknown ingredient')} "
+                      f"({item.get('Quantity', 'N/A')}) - "
+                      f"${item.get('Price_per_ingredient', 'N/A')}")
+
+        print("\nImproved Dishes:")
+        for index, dish in enumerate(feedback.get("Dishes", []), 1):
+            if isinstance(dish, dict):
+                print(f"{index}. {dish.get('dish_name', 'Unnamed dish')} "
+                      f"[{dish.get('cuisine', 'Unknown cuisine')}]")
+        self.view_generated_recipes(feedback)
+
+    # Ask whether the improved meal plan should be saved
+    def ask_save_improved_plan(self):
+        while True:
+            choice = input("\nSave this improved meal plan? (y/n): ").strip().lower()
+            if choice in ("y", "yes"):
+                return True
+            if choice in ("n", "no"):
+                return False
+            print("Invalid input. Please enter Y or N.")
