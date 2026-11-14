@@ -4,7 +4,6 @@ WORKDIR /app
 
 # RUN pip install --no-cache-dir google-genai python-dotenv pycountry pydantic reportlab 
 RUN pip install --no-cache-dir google-genai python-dotenv pycountry pydantic reportlab mysql-connector-python
-
 COPY .env .
 COPY  aiManager.py . 
 COPY  dataManager.py . 
@@ -21,6 +20,6 @@ COPY justeat.py .
 COPY mysql_storage.py .
 COPY samplefeedbackoutput.json .
 COPY Saved_MealPlans.py .
-COPY Test_dataManager.py .
+COPY . .
 
-CMD ["python","main.py"]
+CMD ["python","justeat.py"]
