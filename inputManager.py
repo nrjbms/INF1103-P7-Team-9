@@ -1,12 +1,8 @@
 import pycountry
-import json
 import re
 import pdfmaker
 
 class InputManager:
-    def __init__(self, data_manager = None):
-        self.__data_manager = data_manager
-        
     # Welcome Message to JustEat
     def welcome_msg(self):
         print()
