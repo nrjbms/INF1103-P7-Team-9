@@ -1,32 +1,35 @@
-version: '3.8'
-
 services:
   db:
     image: mysql:8.0
-    container_name: proj_db        # Changed to a unique name
+    container_name: proj_db
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: ""      # Explicitly blank to match your python config
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
       MYSQL_DATABASE: justeat
     ports:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./init_db:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
 
   app:
     build: .
-    container_name: proj_app       # Changed to a unique name
-    restart: always
+    container_name: proj_app
     stdin_open: true
     tty: true
     environment:
-      - DB_HOST=db
-      - DB_USER=root
-      - DB_PASSWORD==""            # Explicitly blank
-      - DB_NAME=justeat
+      DB_HOST: db
+      DB_USER: root
+      DB_PASSWORD: ""
+      DB_NAME: justeat
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
 volumes:
-  - mysql_data:/var/lib/mysql
-  - ./init_db:/docker-entrypoint-initdb.d
+  mysql_data:
