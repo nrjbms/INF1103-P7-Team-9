@@ -6,7 +6,6 @@ WORKDIR /app
 RUN pip install --no-cache-dir google-genai python-dotenv pycountry pydantic reportlab mysql-connector-python
 COPY .env .
 COPY  aiManager.py . 
-COPY  dataManager.py . 
 COPY  inputManager.py . 
 COPY logic/ ./logic/
 COPY pdfmaker.py .
