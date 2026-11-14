@@ -17,6 +17,8 @@ services:
     build: .
     container_name: proj_app       # Changed to a unique name
     restart: always
+    stdin_open: true
+    tty: true
     environment:
       - DB_HOST=db
       - DB_USER=root
