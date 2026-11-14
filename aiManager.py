@@ -15,7 +15,7 @@ class GeminiAPI:
     def __init__(self, pax, total_grocery_cost, country, exclusion):
           self.__pax = pax
           self.__total_grocery_cost = total_grocery_cost
-          self._country = country
+          self.__country = country
           self.__exclusion = exclusion
           self.__meal_plan_data = None
           self.__prompt = None
