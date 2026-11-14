@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: proj_db        # Changed to a unique name
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ""      # Explicitly blank to match your python config
+      MYSQL_DATABASE: justeat
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  app:
+    build: .
+    container_name: proj_app       # Changed to a unique name
+    restart: always
+    environment:
+      - DB_HOST=db
+      - DB_USER=root
+      - DB_PASSWORD==""            # Explicitly blank
+      - DB_NAME=justeat
+    depends_on:
+      - db
+
+volumes:
+  - mysql_data:/var/lib/mysql
+  - ./init_db:/docker-entrypoint-initdb.d
