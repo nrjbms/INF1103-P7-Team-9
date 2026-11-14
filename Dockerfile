@@ -18,5 +18,11 @@ COPY automated_test_case.py .
 COPY test.py .
 COPY testcase.json .
 COPY /icons .
+COPY db_config.py .
+COPY justeat.py .
+COPY mysql_storage.py .
+COPY samplefeedbackoutput.json .
+COPY Saved_MealPlans.py .
+COPY Test_dataManager.py .
 
 CMD ["python","main.py"]
