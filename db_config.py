@@ -2,7 +2,6 @@ import mysql.connector
 from mysql.connector import Error
 
 def get_db_connection():
-    """Establishes and returns a connection to the MySQL database."""
     try:
         connection = mysql.connector.connect(
             host="localhost",
