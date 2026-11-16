@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [Chong-Li-Heng-2603072]
+    branches: [main,Chong-Li-Heng-2603072]
   pull_request:
 
 jobs:
