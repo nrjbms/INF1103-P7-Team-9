@@ -27,6 +27,8 @@ services:
       DB_USER: root
       DB_PASSWORD: ""
       DB_NAME: justeat
+    volumes:
+      - ./output:/app/output
     depends_on:
       db:
         condition: service_healthy

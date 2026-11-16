@@ -19,7 +19,11 @@ class PDF:
     def __init__(self,selected_meal_plan,filename):
         #set selected_meal_plan and filename
         self.__selected_meal_plan = selected_meal_plan
-        self.__filename = f"{filename}.pdf"
+
+        # Save PDFs into an "output" folder next to this file (/app/output in Docker)
+        output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output")
+        os.makedirs(output_dir, exist_ok=True)
+        self.__filename = os.path.join(output_dir, f"{filename}.pdf")
         
         #set constant variables that are used in the other methods
         self.__story = []                                               #__story is the list of elements that would make up the format of the PDF

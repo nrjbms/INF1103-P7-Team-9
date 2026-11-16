@@ -19,7 +19,7 @@ COPY justeat.py .
 COPY mysql_storage.py .
 COPY samplefeedbackoutput.json .
 COPY Saved_MealPlans.py .
-COPY /main_test_cases .
+COPY /main_test_case .
 COPY . .
 
 CMD ["python","justeat.py"]
