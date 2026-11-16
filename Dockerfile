@@ -1,9 +1,12 @@
+#Done by Chong Li Heng 2603072
 FROM python:3.14.7-slim
 
 WORKDIR /app
 
-# RUN pip install --no-cache-dir google-genai python-dotenv pycountry pydantic reportlab 
+#Runs all the libraries needed
 RUN pip install --no-cache-dir google-genai python-dotenv pycountry pydantic reportlab mysql-connector-python
+
+#List of files that needs to be added to the docker image
 COPY .env .
 COPY  aiManager.py . 
 COPY  inputManager.py . 
@@ -22,6 +25,7 @@ COPY Saved_MealPlans.py .
 COPY /main_test_case .
 COPY . .
 
+#runs justeat.py after copying all the needed files
 CMD ["python","justeat.py"]
 
 

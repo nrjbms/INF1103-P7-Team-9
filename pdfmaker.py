@@ -59,7 +59,6 @@ class PDF:
         self.__standard_space = self.__story.append(Spacer(1,10))
 
 
-        #self.__invalid_filename = r'[<>:"/\\|?*]'          >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     # creates the front page header
     def __styling(self,canvas, doc):
@@ -187,7 +186,6 @@ class PDF:
         self.__doc.build(self.__story, onFirstPage=self.__styling)
         if os.path.exists(self.__filename):
             print("\nPDF File has been made !")
-            # return False  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 
 

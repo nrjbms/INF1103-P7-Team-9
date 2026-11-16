@@ -1,3 +1,4 @@
+#Done by Chong Li Heng 2603072
 import os
 from dotenv import load_dotenv
 import mysql.connector
@@ -6,11 +7,12 @@ from mysql.connector import Error
 load_dotenv()
 
 db_host = os.getenv("DB_HOST", "localhost")  # Defaults to localhost if not in Docker
-db_user = os.getenv("DB_USER", "root")
-db_password = os.getenv("DB_PASSWORD", "")   # Match your actual MySQL password
-db_name = os.getenv("DB_NAME", "justeat")    # Defaults to 'justeat' based on your old code
-db_port = int(os.getenv("DB_PORT", 3306))
+db_user = os.getenv("DB_USER", "root")       # Defaults to root if not in Docker
+db_password = os.getenv("DB_PASSWORD", "")   # SQL Password
+db_name = os.getenv("DB_NAME", "justeat")    # Database name
+db_port = int(os.getenv("DB_PORT", 3306))   
 
+#try connecting to database
 def get_db_connection():
     try:
         connection = mysql.connector.connect(

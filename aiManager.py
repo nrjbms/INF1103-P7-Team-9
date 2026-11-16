@@ -11,7 +11,7 @@ import json
 
 class GeminiAPI: 
     #initialise variables for the prompt
-    #initialise prompt message and meal plan data
+    #initialise prompt message and meal plan data and env path
     def __init__(self, pax, total_grocery_cost, country, exclusion):
           self.__pax = pax
           self.__total_grocery_cost = total_grocery_cost
@@ -53,8 +53,11 @@ class GeminiAPI:
     
     #call API using __prompt
     def call_api(self,prompt_type):
+        #if calling API for feedback will change the prompt to the feedback prompt
         if prompt_type == "feedback":
             __content = self.__feedbackprompt
+
+        #if calling API normally, use standard prompt
         else:
             __content = self.__prompt
 
@@ -112,6 +115,7 @@ Return JSON matching this schema exactly:
     "ingredients": "string"
 }}]
 }}'''
+    
     #return generated meal plan
     def generate_meal_plan(self):
         return self.__meal_plan_data

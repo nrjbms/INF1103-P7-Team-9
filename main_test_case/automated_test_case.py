@@ -1,4 +1,3 @@
-#No additional libaries are needed to use this file
 #Done by Chong Li Heng 2603072
 
 import subprocess
@@ -27,37 +26,36 @@ def tester(testcasename, user_inputs, expected_output):
             timeout=30         # stops CI hanging if the program waits for more input
         )
     except subprocess.TimeoutExpired:
-        print(f"\n{testcasename} Failed: program timed out\n")
+        print(f"\n{testcasename} Failed: program timed out\n") #if timeout reflect this error message
         return False
 
     #checks if the output matches expected outputs
     if expected_output in process.stdout:
-        print(f"\n{testcasename} test case passed\n")
+        print(f"\n{testcasename} test case passed\n") #test case message if passed
         return True
     else:
         print(f"""
-{testcasename} Failed:
+{testcasename} Failed:                                
 Expected Output: {expected_output}
 Actual Output: {process.stdout}
 Errors: {process.stderr}
-""")
+""")                                                   #test case message if failed
         return False
 
 
 with open(JSON_PATH, 'r') as file:
-    test_case_list = json.load(file)
+    test_case_list = json.load(file)                    #loads the test cases from testcase.json
 
-#runs the test cases
-failed = 0
-for test_case in test_case_list:
+failed = 0                                              #test case failure counter
+for test_case in test_case_list:                        #runs through every test case
     testcasename = test_case['Test Case Name']
     inputs = test_case['Inputs']
     expected_output = test_case["Expected_Output"]
     if not tester(testcasename, inputs, expected_output):
-        failed += 1
+        failed += 1                                     #if test case failed add to counter
 
 print(f"\nTest has ended: {len(test_case_list) - failed} passed, {failed} failed")
 
 #makes GitHub Actions go red if any test failed
-if failed > 0:
+if failed > 0: 
     sys.exit(1)

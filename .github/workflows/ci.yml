@@ -1,14 +1,18 @@
+#done by Chong Li Heng 2603072
 name: CI
 
+#everytime we push into these branches it will run the tester
 on:
   push:
     branches: [main, Chong-Li-Heng-2603072,Add-MySQL-storage-for-saved-meal-plans---2605789,Update-Saved-Meal-Plans-with-MySQL-database-integration---2605789,angelica---2605789,nrjbms-comments]
   pull_request:
 
+
 jobs:
   test:
     runs-on: ubuntu-latest
-
+    
+    #list down all the needed variables like database
     services:
       mysql:
         image: mysql:8
@@ -23,13 +27,13 @@ jobs:
           --health-timeout=5s
           --health-retries=10
 
+    #list down database details
     env:
       DB_HOST: 127.0.0.1
       DB_PORT: 3306
       DB_USER: root
       DB_PASSWORD: rootpass
       DB_NAME: justeat
-      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
     steps:
       - uses: actions/checkout@v4
@@ -38,13 +42,16 @@ jobs:
         with:
           python-version: "3.14"
 
+      #installing dependencies from requirements.txt
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-
+      
+      #loads the database
       - name: Load database schema
         run: mysql --protocol=tcp -h 127.0.0.1 -P 3306 -uroot -prootpass justeat < init_db/schema.sql
 
+      #runs the testcases from automated_text_case.py
       - name: Run tests
         run: python main_test_case/automated_test_case.py
