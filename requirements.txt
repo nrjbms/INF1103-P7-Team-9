@@ -1,6 +1,0 @@
-google-genai
-python-dotenv
-pycountry
-pydantic
-reportlab
-mysql-connector-python
