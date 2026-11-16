@@ -27,7 +27,7 @@ name: CI
 
 on:
   push:
-    branches: [main, Chong-Li-Heng-2603072]
+    branches: [main, Chong-Li-Heng-2603072,Add-MySQL-storage-for-saved-meal-plans---2605789,Update-Saved-Meal-Plans-with-MySQL-database-integration---2605789,angelica---2605789,nrjbms-comments]
   pull_request:
 
 jobs:
