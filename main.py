@@ -6,6 +6,8 @@ from mysql_storage import MySQLStorage
 from logic.logic_manager import LogicManager
 from logic.user_profile import UserProfile
 
+#Main Class will run in justeat.py
+#If test_mode is enabled, the program will use hardcoded values for testing purposes, this will run in test.py
 
 class Main:
 
